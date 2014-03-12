@@ -1,0 +1,28 @@
+
+	<?php
+	$this->Form->create();
+	?>
+	<div class="pad">
+		<ul>
+			<?php
+			for ($i=0; $i<5; $i++) {
+			?>
+			<li>
+				<?php
+				$this->Form->label($this->_("Internetbs.tab_nameserver.field_ns", true, $i+1), "ns" . $i+1);
+				$this->Form->fieldText("ns[]", $this->Html->ifSet($vars->ns[$i]), array('id' => "ns" . $i+1));
+				?>
+			</li>
+			<?php
+			}
+			?>
+		</ul>
+	</div>
+	<div class="button_row">
+		<div class="btn submit right_btn">
+			<a class="submit" href="#"><?php $this->_("Internetbs.tab_nameservers.field_submit");?></a>
+		</div>
+	</div>
+	<?php
+	$this->Form->end();
+	?>

@@ -1,0 +1,31 @@
+	<?php
+	$this->Form->create();
+	?>
+	<div class="pad">
+		<ul>
+			<li>
+        		<div class="title_row first">
+        			<h3><?php $this->_("Internetbs.tab_settings.field_registrar_lock");?></h3>
+        		</div>
+                <?php
+				$this->Form->fieldRadio("registrar_lock", "true", $this->Html->ifSet($vars->registrar_lock) == "true", array('id' => "registrar_lock_yes"));
+				$this->Form->label($this->_("Internetbs.tab_settings.field_registrar_lock_yes", true), "registrar_lock_yes", array('class' => "inline"));
+                ?><br><br><?php
+				$this->Form->fieldRadio("registrar_lock", "false", $this->Html->ifSet($vars->registrar_lock) == "false", array('id' => "registrar_lock_no"));
+				$this->Form->label($this->_("Internetbs.tab_settings.field_registrar_lock_no", true), "registrar_lock_no", array('class' => "inline"));
+				?>
+			</li>
+			<li>
+        		<div class="title_row first">
+        			<h3><?php $this->_("Internetbs.tab_settings.field_request_epp");?></h3>
+        		</div>
+                <?php
+				$this->Form->label($vars->epp_key, "request_epp");
+				?>
+			</li>
+		</ul>
+	</div>
+	<div class="button_row"><a class="btn_right submit" href="#"><?php $this->_("Internetbs.tab_settings.field_submit");?></a></div>
+	<?php
+	$this->Form->end();
+	?>
