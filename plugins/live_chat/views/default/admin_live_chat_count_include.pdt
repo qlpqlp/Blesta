@@ -1,0 +1,40 @@
+<!-- display live chat count menu badge and admin chat-->
+<?php
+
+		$blc_q = new Record();
+		$blc_q = $blc_q->select(array("first_name","last_name"))->from("staff")->where("user_id", "=", $logged_in)->fetch();
+        $blc_q = $blc_q->{"first_name"}." ".$blc_q->{"last_name"};
+
+?>
+<script>
+$(document).ready(function() {
+    $("a[href='<?php echo($this->base_uri);?>../plugins/live_chat/vendors/blc/index.php/site_admin/']").click(function() {
+        var newwindow = window.open($(this).prop('href'), '', 'height=570,width=850');
+        if (window.focus) {
+            newwindow.focus();
+        }
+        return false;
+    });
+});
+jQuery(function($){
+  $( document ).ready(function() {
+    $.get( '<?php echo($this->base_uri);?>plugin/live_chat/admin_live_chat_count/', function(newRowCount){
+      $("a[href='<?php echo($this->base_uri);?>../plugins/live_chat/vendors/blc/index.php/site_admin/']").html( newRowCount.trim() );
+    });
+  });
+  setInterval(function(){
+    $.get( '<?php echo($this->base_uri);?>../plugin/live_chat/admin_live_chat_count/', function(newRowCount){
+      $("a[href='<?php echo($this->base_uri);?>../plugins/live_chat/vendors/blc/index.php/site_admin/']").html( newRowCount.trim() );
+    });
+  },5000);
+});
+</script>
+<script>
+var LHCChatboxOptions = {hashchatbox:'empty',identifier:'default',status_text:'Admin Chat','nick':'<?php echo($blc_q); ?>','disable_nick_change':true};
+(function() {
+var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+po.src = '<?php echo($this->base_uri);?>../plugins/live_chat/vendors/blc/index.php/chatbox/getstatus/(position)/bottom_right/(top)/300/(units)/pixels/(width)/300/(height)/300/(chat_height)/220';
+var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+})();
+</script>
+<!-- end display live chat count menu badge and admin chat-->

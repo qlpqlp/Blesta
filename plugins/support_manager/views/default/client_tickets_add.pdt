@@ -1,0 +1,105 @@
+
+			<?php
+			echo $this->Html->ifSet($message);
+			
+			$this->WidgetClient->clear();
+			$this->WidgetClient->renderSubHead(false);
+			$this->WidgetClient->setStyleSheet($this->view_dir . "css/styles.css", array('id' => "support_manager_styles"));
+			$this->WidgetClient->create($this->_("ClientTickets.add.boxtitle_add", true));
+			
+			$this->Form->create(null, array('id'=>"create_ticket", 'enctype' => "multipart/form-data"));
+			?>
+			<div class="heading first">
+				<h5><?php $this->_("ClientTickets.add.heading_details");?></h5>
+			</div>
+			<div class="pad">
+				<ul>
+					<?php
+					// Require email address for those not logged in
+					if (!$this->Html->ifSet($logged_in, false)) {
+					?>
+					<li>
+						<?php
+						$this->Form->label($this->_("ClientTickets.add.field_email", true), "email");
+						$this->Form->fieldText("email", $this->Html->ifSet($vars->email), array('id' => "email"));
+						?>
+					</li>
+					<?php
+					}
+					?>
+					<li>
+						<?php
+						$this->Form->label($this->_("ClientTickets.add.field_summary", true), "summary");
+						$this->Form->fieldText("summary", $this->Html->ifSet($vars->summary), array('id' => "summary"));
+						?>
+					</li>
+					<li>
+						<?php
+						$this->Form->label($this->_("ClientTickets.add.field_priority", true), "priority");
+						$this->Form->fieldSelect("priority", $this->Html->ifSet($priorities), $this->Html->ifSet($vars->priority), array('id' => "priority"));
+						?>
+					</li>
+					<li>
+						<?php
+						$this->Form->label($this->_("ClientTickets.add.field_details", true), "details");
+						$this->Form->fieldTextarea("details", $this->Html->ifSet($vars->details), array('id' => "details"));
+						?>
+					</li>
+					<li id="file_attachment">
+						<?php
+						$this->Form->label($this->_("ClientTickets.add.field_attachments", true), "attachment[]");
+						$this->Form->fieldFile("attachment[]");
+						?>
+					</li>
+					<li id="add_attachment_field">
+						<a class="add_icon" href="#"><span><?php $this->_("ClientTickets.add.text_add_attachment");?></span></a>
+					</li>
+				</ul>
+			</div>
+			
+			<div class="button_row">
+				<div class="btn submit right_btn">
+					<a class="submit" href="#"><?php $this->_("ClientTickets.add.field_addsubmit");?></a>
+				</div>
+			</div>
+			<?php
+			$this->Form->end();
+			$this->WidgetClient->end();
+			?>
+<?php
+$this->Javascript->setInline("
+	$(document).ready(function() {
+		$('#department_id').change(function() {
+			setDepartmentPriorities($(this).val());
+		});
+		
+		$('#add_attachment_field a').click(function() {
+			var attachment = $('#file_attachment input').clone();
+			$(attachment).val('');
+			$('<li></li>').insertAfter($('#file_attachment')).html($(attachment));
+			return false;
+		});
+	});
+	
+	// Fetch priorities
+	function setDepartmentPriorities(department_id) {
+		$(document).blestaRequest('GET', '" . $this->Html->safe($this->base_uri . "plugin/support_manager/client_tickets/getpriorities/") . "' + department_id, {},
+			function(data) {
+				if (data['priorities']) {
+					$('#priority option').remove();
+					
+					var default_priority = (data['default_priority'] ? data['default_priority'] : '');
+					for (var value in data['priorities']) {
+						$('#priority').append(new Option(data['priorities'][value], value));
+						
+						if (default_priority == value)
+							$('#priority option:last-child').attr('selected', 'selected');
+					}
+				}
+			},
+			null,
+			{dataType:'json'}
+		);
+	}
+");
+?>

@@ -1,0 +1,398 @@
+
+				<?php
+				echo $this->Html->ifSet($message);
+				
+				$this->Widget->clear();
+				$this->Widget->setStyleSheet($this->view_dir . "css/styles.css", array('id' => "support_manager_styles"));
+				$this->Widget->create($this->_("AdminTickets.reply.boxtitle_reply", true, $this->Html->ifSet($ticket->code)), array('id' => "admin_tickets_reply"));
+				?>
+				<div class="inner">
+
+
+					<table class="table">
+						<tr class="heading_row">
+							<td><?php $this->_("AdminTickets.reply.heading_client");?></td>
+						</tr>
+						<tr>
+							<td>
+
+								<?php
+								if (!empty($client)) {
+								?>
+								<a href="<?php echo $this->Html->safe($this->base_uri . "clients/view/" . $this->Html->ifSet($client->id) . "/");?>"><?php echo $this->Html->concat(" ", $this->Html->safe($client->first_name), $this->Html->safe($client->last_name));?></a>
+								<?php
+                                echo "<span class='is_client'>".$this->_("AdminTickets.index.is_client", true)."</span>";
+								}
+								elseif (!empty($ticket->email)) {
+								?>
+								<a href="mailto:<?php $this->Html->_($ticket->email);?>">
+                                <?php
+                                    if ($this->Html->ifSet($ticket->name)){
+            					        	echo $this->Html->ifSet($ticket->name);
+                                       }else{
+                                            echo $this->Html->_($ticket->email);
+                                    }
+                                ?>
+                                </a>
+                                <?php
+
+                                    if (empty($ticket->email)){
+                                        echo "<span class='is_client'>".$this->_("AdminTickets.index.is_client", true)."</span>";
+
+                                        }else{
+                                         echo "<span class='not_client'>".$this->_("AdminTickets.index.not_client", true)."</span>";
+
+                                    if (empty($ticket->name)){$name_c = $ticket->email;}else{$name_c =$ticket->name;}
+                                $this->Form->create("/".Configure::get("Route.admin")."/clients/add/", array('enctype' => "post"));
+                                $this->Form->fieldHidden("first_name", $name_c, array('id' => "first_name"));
+                                $this->Form->fieldHidden("last_name", "-", array('id' => "last_name"));
+                                $this->Form->fieldHidden("email", $ticket->email, array('id' => "email"));
+                                $this->Form->fieldHidden("username_type", "email", array('id' => "username_type_email"));
+                                $this->Form->fieldHidden("new_password", "-", array('id' => "new_password"));
+                                $this->Form->fieldHidden("client_group_id", "1", array('id' => "client_group_id"));
+                                ?>
+                                <input class="btn_extra" type="submit" value="<?php echo($this->_("AdminTickets.index.add_client", true));?>" />
+            					<?php
+			            		$this->Form->end();
+                                 }
+								}
+								?>
+
+
+							</td>
+	</tr>
+					</table>
+                    <p></p>
+					<?php
+				  	$this->Form->create(null, array('id' => "create_ticket", 'enctype' => "multipart/form-data"));
+					?>
+					<table class="table">
+						<tr class="heading_row">
+							<td><?php $this->_("AdminTickets.reply.heading_department");?></td>
+							<td><?php $this->_("AdminTickets.reply.heading_staff_id");?></td>
+							<td><?php $this->_("AdminTickets.reply.heading_priority");?></td>
+							<td><?php $this->_("AdminTickets.reply.heading_status");?></td>
+							<td><?php $this->_("AdminTickets.reply.heading_date_added");?></td>
+						</tr>
+                        <tr>
+							<td><?php $this->Form->fieldSelect("department_id", $this->Html->ifSet($departments), $this->Html->ifSet($vars->department_id), array('id' => "department_id"));?></td>
+							<td><?php $this->Form->fieldSelect("ticket_staff_id", $this->Html->ifSet($department_staff), $this->Html->ifSet($vars->ticket_staff_id), array('id' => "ticket_staff_id"));?></td>
+							<td><?php $this->Form->fieldSelect("priority", $this->Html->ifSet($priorities), $this->Html->ifSet($vars->priority), array('id' => "priority"));?></td>
+							<td><?php $this->Form->fieldSelect("status", $this->Html->ifSet($statuses), $this->Html->ifSet($vars->status), array('id' => "status"));?></td>
+							<td><?php echo $this->Date->cast($this->Html->ifSet($ticket->date_added), "date_time");?></td>
+						</tr>
+					</table>
+
+					<p><div class="title_row first">
+						<h3><?php $this->_("AdminTickets.reply.heading_summary");?></h3>
+					</div></p>
+
+					<p>
+						<?php
+						$this->Form->fieldText("summary", $this->Html->ifSet($vars->summary), array('id' => "summary"));
+						?>
+                    </p>
+
+
+
+					<div class="title_row">
+						<h3><?php $this->_("AdminTickets.reply.heading_reply");?></h3>
+					</div>
+					<div class="clear"></div>
+					
+					<h4><a id="add_predefined_response" class="show_content" href="#"><?php $this->_("AdminTickets.reply.text_add_response");?></a></h4>
+					<div id="predefined_responses" style="display:none;">
+						<?php echo $this->Html->ifSet($predefined_responses);?>
+					</div>
+					
+					<div class="pad clear">
+						<ul>
+							<li>
+								<?php $this->Form->fieldHidden("reply_type", $this->Html->ifSet($vars->reply_type, "reply"), array('id' => "reply_type"));?>
+								<div class="tab_content">
+									<ul class="tabs">
+										<li class="current">
+											<a href="#" class="reply"><?php $this->Form->label($this->_("AdminTickets.reply.field_reply", true), "reply");?></a>
+										</li>
+										<li>
+											<a href="#" class="note"><?php $this->Form->label($this->_("AdminTickets.reply.field_note", true), "note");?></a>
+										</li>
+									</ul>
+									<div class="inner_content">
+										<div>
+											<?php
+											$staff_signature = "";
+											if ($this->Html->ifSet($staff_id, false) && $this->Html->ifSet($staff_settings[$staff_id], false) && !empty($staff_settings[$staff_id]['signature']))
+												$staff_signature = "\n\n" . $this->Html->ifSet($staff_settings[$staff_id]['signature']);
+											
+											$this->Form->fieldTextarea("details", $this->Html->ifSet($vars->details, $staff_signature), array('id'=>"reply_details"));
+											?>
+										</div>
+										<div>
+											<?php $this->Form->fieldTextarea("notes", $this->Html->ifSet($vars->notes), array('id'=>"note_details"));?>
+										</div>
+									</div>
+								</div>
+							</li>
+							<li id="file_attachment">
+								<?php
+								$this->Form->label($this->_("AdminTickets.reply.field_attachments", true), "attachment[]");
+								$this->Form->fieldFile("attachment[]");
+								?>
+							</li>
+							<li id="add_attachment_field">
+								<a class="add_icon" href="#"><span><?php $this->_("AdminTickets.reply.text_add_attachment");?></span></a>
+							</li>
+						</ul>
+					</div>
+					
+					<div class="button_row">
+						<a class="btn_right submit" href="#"><?php $this->_("AdminTickets.reply.field_replysubmit");?></a>
+					</div>
+					<?php
+					$this->Form->end();
+					?>
+					<div class="clear"></div>
+				
+					<?php
+					foreach ($this->Html->ifSet($ticket->replies, array()) as $reply) {
+						if ($this->Html->ifSet($reply->staff_id) != "") {
+							$first_name = $this->Html->ifSet($reply->first_name, $this->_("AdminTickets.reply.system", true));
+							$last_name = $this->Html->ifSet($reply->last_name);
+						}
+						else {
+							$first_name = $this->Html->ifSet($reply->first_name);
+							if ($reply->first_name == "")
+								$first_name = $this->Html->ifSet($ticket->email);
+								
+							$last_name = $this->Html->ifSet($reply->last_name);
+						}
+						$first_name = $this->Html->safe($first_name);
+						$last_name = $this->Html->safe($last_name);
+					?>
+					<div class="<?php echo $this->Html->_($reply->type, true) . ($this->Html->_($reply->type, true) == "note" ? " reply" : "");?>">
+						<?php
+						if ($this->Html->ifSet($reply->type) == "reply" || $this->Html->ifSet($reply->type) == "note") {
+						?>
+						<div class="topbar<?php echo ($this->Html->ifSet($reply->staff_id) != "" ? " staff" : "");?>">
+							<p>
+							<?php
+							$this->_("AdminTickets.reply.reply_date", false, $this->Date->cast($this->Html->ifSet($reply->date_added), Configure::get("SupportManager.reply_date_format")), $first_name, $last_name);
+							?>
+							</p>
+						</div>
+						<div class="left">
+							<div>
+								<img src="//www.gravatar.com/avatar/<?php echo md5(strtolower(trim($this->Html->_($reply->email, true))));?>?s=120" />
+							</div>
+							<p class="name">
+							<?php
+							if ($this->Html->ifSet($reply->staff_id) == "" && $ticket->client_id) {
+							?>
+								<a href="<?php echo $this->Html->safe($this->base_uri . "clients/view/" . $ticket->client_id);?>"><?php echo $this->Html->concat(" ", $first_name, $last_name);?></a>
+							<?php
+							}
+							else {
+								echo $this->Html->concat(" ", $first_name, $last_name);
+							}
+							?>
+							</p>
+							<?php
+							if ($this->Html->ifSet($reply->staff_id) != "") {
+								$staff_title = $this->_("AdminTickets.reply.staff_title", true);
+								if ($this->Html->ifSet($staff_settings[$reply->staff_id], false) && !empty($staff_settings[$reply->staff_id]['title']))
+									$staff_title = $this->Html->safe($staff_settings[$reply->staff_id]['title']);
+							?>
+							<p class="title"><?php echo $staff_title;?></p>
+							<?php
+							}
+							?>
+						</div>
+						<div class="right">
+							<?php
+							// Show attachments
+							if (!empty($reply->attachments)) {
+							?>
+							<div class="attachments">
+								<?php
+								foreach ($reply->attachments as $attachment) {
+								?>
+								<p><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_manager/admin_tickets/getattachment/" . $this->Html->ifSet($attachment->id) . "/");?>"><?php $this->Html->_($attachment->name);?></a></p>
+								<?php
+								}
+								?>
+							</div>
+							<?php
+							}
+							?>
+							<div id="<?php echo $reply->id; ?>" class="response">
+								<?php echo nl2br($this->Html->_($reply->details, true));?>
+							</div>
+                            <div id="response_q<?php echo $reply->id; ?>" style="display: none">
+								<?php echo $this->Html->_($reply->details, true);?>
+							</div>
+					<div class="button_row">
+<a id="quote<?php echo $reply->id; ?>" style="margin-bottom: 15px !important" class="btn_right quote_link" href="#"><?php echo($this->_("AdminTickets.index.quote", true));?></a>
+<?PHP
+                                $this->Form->create("/".Configure::get("Route.admin")."/plugin/support_manager/admin_tickets/index/open/", array('enctype' => "post"));
+                                $this->Form->fieldHidden("reply_id", $reply->id, array('id' => "reply_id"));
+                                ?>
+                                						<a class="btn_right submit" href="#" onclick="return confirm('<?php echo($this->_("AdminTickets.index.categorylink_delete_reply_confirm", true));?>');"><?php echo($this->_("AdminTickets.index.del_reply", true));?></a>
+            					<?php
+			            		$this->Form->end();
+?>
+
+
+					</div>
+						</div>
+						<div class="clear"></div>
+						<?php
+						}
+						elseif ($this->Html->ifSet($reply->type) == "log") {
+						?>
+						<p>
+							<?php $this->Html->_($reply->details);?>
+							<em><?php $this->_("AdminTickets.reply.log_date", false, $this->Date->cast($this->Html->ifSet($reply->date_added), Configure::get("SupportManager.reply_date_format")), $first_name, $last_name);?></em>
+						</p>
+						<?php
+						}
+						?>
+					</div>
+					<?php
+					}
+					?>
+				</div>
+				<?php
+				$this->Widget->end();
+				?>
+
+<?php
+$this->Javascript->setInline("
+	$(document).ready(function() {
+		if ($('#reply_type').val() == 'note') {
+			$('.tab_content .tabs li').attr('class', '');
+			$(this).find('a.note').parent('li').attr('class', 'current');
+		}
+		
+		// Toggle predefined responses
+		$(this).blestaBindToggleEvent('#add_predefined_response', '#predefined_responses');
+		$('#add_predefined_response').click(function() {
+			if ($(this).hasClass('show_content')) {
+				setPredefinedResponses(null);
+			}
+		});
+		
+		// Switch between response categories
+		$('#responses .category a.text_link, #responses .up_level a.text_link').live('click', function() {
+			var match = $(this).attr('id').match(/(\d+)$/);
+			var cat_id = match ? parseInt(match[0], 10) : null;
+			setPredefinedResponses(cat_id);
+			return false;
+		});
+		
+		// Add the predefined response
+		$('#responses .response_item a.text_link').live('click', function() {
+			var match = $(this).attr('id').match(/(\d+)$/);
+			var response_id = match ? parseInt(match[0], 10) : null;
+			setPredefinedResponse(response_id);
+			return false;
+		});
+		
+
+		// Quote Reply
+		$('a.quote_link').live('click', function() {
+			var match = $(this).attr('id').match(/(\d+)$/);
+			var quote_id = match ? parseInt(match[0], 10) : null;
+			setQuote(quote_id);
+			return false;
+		});
+
+
+
+		$('.tab_content .tabs a').click(function() {
+			$('#reply_type').val($(this).attr('class'));
+		});
+		$('#add_attachment_field a').click(function() {
+			var attachment = $('#file_attachment input').clone();
+			$(attachment).val('');
+			$('<li></li>').insertAfter($('#file_attachment')).html($(attachment));
+			return false;
+		});
+		
+		$('div.tab_content').blestaTabbedContent();
+		
+		$('#department_id').change(function() {
+			setDepartmentStaff($(this).val());
+		});
+
+		$('.btn_extra').ready(function() {
+			$('#new_password').attr('value', $(this).blestaRandomString(10));
+			return false;
+		});
+	});
+
+
+	function setQuote(quote_id) {
+					if ($('.tab_content .tabs .current a').attr('class') == 'reply') {
+						$('#reply_details').val($('#response_q' + quote_id).html() + $('#reply_details').val());
+						$('#reply_details').scrollTop($('#reply_details')[0].scrollHeight);
+					}
+					else if ($('.tab_content .tabs .current a').attr('class') == 'note') {
+						$('#note_details').val($('#response_q' + quote_id).html() + $('#note_details').val());
+						$('#note_details').scrollTop($('#note_details')[0].scrollHeight);
+					};
+	}
+
+
+	function setPredefinedResponse(response_id) {
+		$(document).blestaRequest('GET', '" . $this->Html->safe($this->base_uri . "plugin/support_manager/admin_tickets/getresponse/") . "' + response_id, {},
+			function(data) {
+				if (data) {
+					if ($('.tab_content .tabs .current a').attr('class') == 'reply') {
+						$('#reply_details').val(data + $('#reply_details').val());
+						$('#reply_details').scrollTop($('#reply_details')[0].scrollHeight);
+					}
+					else if ($('.tab_content .tabs .current a').attr('class') == 'note') {
+						$('#note_details').val(data + $('#note_details').val());
+						$('#note_details').scrollTop($('#note_details')[0].scrollHeight);
+					}
+				}
+			},
+			null,
+			{dataType:'json'}
+		);
+	}
+
+	function setPredefinedResponses(category_id) {
+		$(document).blestaRequest('GET', '" . $this->Html->safe($this->base_uri . "plugin/support_manager/admin_tickets/getresponselisting/") . "' + category_id, {},
+			function(data) {
+				if (data) {
+					$('#predefined_responses').html(data);
+				}
+			},
+			null,
+			{dataType:'json'}
+		);
+	}
+	
+	function setDepartmentStaff(department_id) {
+		$(document).blestaRequest('GET', '" . $this->Html->safe($this->base_uri . "plugin/support_manager/admin_tickets/getdepartmentstaff/") . "' + department_id, {},
+			function(data) {
+				if (data) {
+					$('#ticket_staff_id option').remove();
+					
+					var default_option = '';
+					for (var value in data) {
+						$('#ticket_staff_id').append(new Option(data[value], value));
+						
+						if (default_option == value)
+							$('#ticket_staff_id option:last-child').attr('selected', 'selected');
+					}
+				}
+			},
+			null,
+			{dataType:'json'}
+		);
+	}
+");
+?>

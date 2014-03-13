@@ -1,0 +1,30 @@
+
+				<?php
+				echo $this->Html->ifSet($message);
+				
+				$this->Widget->clear();
+				$this->Widget->create($this->_("AdminResponses.edit.boxtitle_edit", true));
+				?>
+				<div class="inner">
+					<?php $this->Form->create();?>
+					<div class="pad">
+						<ul>
+							<li>
+								<?php
+								$this->Form->label($this->_("AdminResponses.edit.field_name", true), "name");
+								$this->Form->fieldText("name", $this->Html->ifSet($vars->name), array('id' => "name"));
+								?>
+							</li>
+							<li>
+								<?php
+								$this->Form->label($this->_("AdminResponses.edit.field_details", true), "details");
+								$this->Form->fieldTextarea("details", $this->Html->ifSet($vars->details), array('id' => "details"));
+								?>
+							</li>
+						</ul>
+					</div>
+					
+					<div class="button_row"><a class="btn_right submit" href="#"><?php $this->_("AdminResponses.edit.field_submit");?></a></div>
+					<?php $this->Form->end();?>	
+				</div>
+				<?php $this->Widget->end();?>

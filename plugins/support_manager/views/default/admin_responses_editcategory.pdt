@@ -1,0 +1,24 @@
+
+				<?php
+				echo $this->Html->ifSet($message);
+				
+				$this->Widget->clear();
+				$this->Widget->create($this->_("AdminResponses.editcategory.boxtitle_editcategory", true));
+				?>
+				<div class="inner">
+					<?php $this->Form->create();?>
+					<div class="pad">
+						<ul>
+							<li>
+								<?php
+								$this->Form->label($this->_("AdminResponses.editcategory.field_name", true), "name");
+								$this->Form->fieldText("name", $this->Html->ifSet($vars->name), array('id' => "name"));
+								?>
+							</li>
+						</ul>
+					</div>
+					
+					<div class="button_row"><a class="btn_right submit" href="#"><?php $this->_("AdminResponses.editcategory.field_submit");?></a></div>
+					<?php $this->Form->end();?>	
+				</div>
+				<?php $this->Widget->end();?>

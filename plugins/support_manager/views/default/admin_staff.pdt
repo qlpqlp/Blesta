@@ -1,0 +1,86 @@
+		<?php
+		echo $this->Html->ifSet($message);
+		
+		$link_buttons = array(
+			array('name'=>$this->_("AdminStaff.index.categorylink_addstaff", true), 'attributes'=>array("href"=>$this->Html->safe($this->base_uri . "plugin/support_manager/admin_staff/add/")))
+		);
+		
+		$this->Widget->clear();
+		$this->Widget->setLinkButtons($link_buttons);
+		$this->Widget->create($this->_("AdminStaff.index.boxtitle_staff", true), array('id'=>"admin_staff"), $this->Html->ifSet($render_section, null));
+		
+		if ($this->Html->ifSet($staff, false) && ($num_staff = count($staff)) > 0) {
+		?>
+		<table class="table" id="staff">
+			<tr class="heading_row">
+				<td><span><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_manager/admin_staff/index/?sort=first_name&order=" . ($sort == "first_name" ? $negate_order : $order));?>" class="ajax<?php echo $this->Html->safe($sort == "first_name" ? " " . $order : "");?>"><?php $this->_("AdminStaff.index.heading_first_name");?></a></span></td>
+				<td><span><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_manager/admin_staff/index/?sort=email&order=" . ($sort == "email" ? $negate_order : $order));?>" class="ajax<?php echo $this->Html->safe($sort == "email" ? " " . $order : "");?>"><?php $this->_("AdminStaff.index.heading_email");?></a></span></td>
+				<td><span><?php $this->_("AdminStaff.index.heading_ticket_emails");?></span></td>
+				<td><span><?php $this->_("AdminStaff.index.heading_mobile_ticket_emails");?></span></td>
+				<td class="last"><span><?php $this->_("AdminStaff.index.heading_options");?></span></td>
+			</tr>
+			<?php
+			// Display all staff
+			$i = 0;
+			foreach ($staff as $member) {
+				// Get email ticket status
+				$ticket_status = array('ticket_emails' => "inactive", "mobile_ticket_emails" => "inactive");
+				foreach (array("ticket_emails", "mobile_ticket_emails") as $ticket_key) {
+					foreach ($this->Html->ifSet($member->settings[$ticket_key], array()) as $key => $value) {
+						if ($value == "true") {
+							$ticket_status[$ticket_key] = "active";
+							break;
+						}
+					}
+				}
+			?>
+			<tr class="<?php echo $this->Html->concat(" ", "staff_member", ($i++%2 == 1) ? "odd_row" : "", "expand");?>">
+				<td><?php echo $this->Html->concat(" ", $this->Html->_($member->first_name, true), $this->Html->_($member->last_name, true));?></td>
+				<td><?php $this->Html->_($member->email);?></td>
+				<td><div class="<?php $this->Html->_($ticket_status['ticket_emails']);?>"></div></td>
+				<td><div class="<?php $this->Html->_($ticket_status['mobile_ticket_emails']);?>"></div></td>
+				<td class="last">
+					<a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_manager/admin_staff/edit/" . $this->Html->_($member->id, true) . "/");?>"><?php $this->_("AdminStaff.index.option_edit");?></a>,
+					<a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_manager/admin_staff/delete/" . $this->Html->_($member->id, true) . "/");?>" class="manage" rel="<?php echo $this->Html->safe($this->_("AdminStaff.index.confirm_delete", true));?>"><?php $this->_("AdminStaff.index.option_delete");?></a>
+				</td>
+			</tr>
+			<tr class="expand_details" id="staff_<?php $this->Html->_($member->id);?>">
+				<td colspan="5" class="subtable">
+				</td>
+			</tr>
+			<?php
+			}
+			unset($i);
+			?>
+		</table>
+		<?php
+			// Set pagination
+			$this->Pagination->build();
+		}
+		else {
+		?>
+		<div class="empty_section">
+			<div class="empty_box">
+				<?php $this->_("AdminStaff.index.no_results");?>
+			</div>
+		</div>
+		<?php
+		}
+		$this->Widget->end();
+		?>
+<?php
+$this->Javascript->setInline("
+$(document).ready(function() {
+	// Handle confirmation
+	$('#staff a.manage[rel]').blestaModalConfirm({base_url: '" . $this->base_uri . "', close: '" . $this->_("AppController.modal.text_close", true) . "'});
+	
+	// Fetch all staff schedules/departments
+	$('.staff_member a', this).click(function(e) {
+		e.stopPropagation();
+	});
+	$('.staff_member').click(function() {
+		$(this).blestaUpdateRow('" . $this->Html->_($this->base_uri, true) . "plugin/support_manager/admin_staff/getschedule/' + $(this).next('tr').attr('id').split('_')[1], '.subtable');
+	});
+});
+");
+?>

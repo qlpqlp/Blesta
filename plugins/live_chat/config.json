@@ -1,0 +1,11 @@
+{
+	"version": "1.0.1",
+	"name": "Blesta Live Chat",
+	"description": "A complete Live Help Chat for your clients and also a Chat Room for your Blesta Admins that can comunicate.",
+	"authors": [
+		{
+			"name": "Infoscan - Informatica, Lda [WebLX]",
+			"url": "http://www.weblx.net"
+		}
+	]
+}

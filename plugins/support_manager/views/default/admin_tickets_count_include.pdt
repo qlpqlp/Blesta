@@ -1,0 +1,16 @@
+<!-- display ticket count menu badge-->
+<script>
+jQuery(function($){
+  $( document ).ready(function() {
+    $.get( '<?php echo($this->base_uri);?>plugin/support_manager/admin_tickets_count/', function(newRowCount){
+      $("a[href='<?php echo($this->base_uri);?>plugin/support_manager/admin_main/']").html( newRowCount.trim() );
+    });
+  });
+  setInterval(function(){
+    $.get( '<?php echo($this->base_uri);?>plugin/support_manager/admin_tickets_count/', function(newRowCount){
+      $("a[href='<?php echo($this->base_uri);?>plugin/support_manager/admin_main/']").html( newRowCount.trim() );
+    });
+  },5000);
+});
+</script>
+<!-- end display ticket count menu badge-->

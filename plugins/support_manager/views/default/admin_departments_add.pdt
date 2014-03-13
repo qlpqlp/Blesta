@@ -1,0 +1,149 @@
+
+				<?php
+				echo $this->Html->ifSet($message);
+				
+				$this->Widget->clear();
+				$this->Widget->create($this->_("AdminDepartments.add.boxtitle_adddepartment", true));
+				?>
+				<div class="inner">
+					<?php $this->Form->create(null, array('id'=>"department"));?>
+					
+					<div class="pad">
+						<ul>
+							<li>
+								<?php
+								$this->Form->label($this->_("AdminDepartments.add.field_name", true), "name");
+								$this->Form->fieldText("name", $this->Html->ifSet($vars->name), array('id' => "name"));
+								?>
+							</li>
+							<li>
+								<?php
+								$this->Form->label($this->_("AdminDepartments.add.field_description", true), "description");
+								$this->Form->fieldTextarea("description", $this->Html->ifSet($vars->description), array('id' => "description"));
+								?>
+							</li>
+							<li>
+								<?php
+								$this->Form->fieldCheckbox("clients_only", "1", $this->Html->ifSet($vars->clients_only) == "1", array('id' => "clients_only"));
+								$this->Form->label($this->_("AdminDepartments.add.field_clients_only", true), "clients_only", array('class' => "inline"));
+								?>								
+							</li>
+							<li>
+								<?php
+								$this->Form->label($this->_("AdminDepartments.add.field_email", true), "email");
+								$this->Form->fieldText("email", $this->Html->ifSet($vars->email), array('id' => "email"));
+								?>
+							</li>
+							<li>
+								<?php
+								$this->Form->fieldCheckbox("override_from_email", "1", $this->Html->ifSet($vars->override_from_email) == "1", array('id' => "override_from_email"));
+								$this->Form->label($this->_("AdminDepartments.add.field_override_from_email", true), "override_from_email", array('class' => "inline"));
+								?>
+							</li>
+							<li>
+								<?php
+								$this->Form->label($this->_("AdminDepartments.add.field_default_priority", true), "default_priority");
+								$this->Form->fieldSelect("default_priority", $this->Html->ifSet($priorities), $this->Html->ifSet($vars->default_priority), array('id' => "default_priority"));
+								?>
+							</li>
+							<li>
+								<?php
+								$this->Form->label($this->_("AdminDepartments.add.field_method", true), "method");
+								$this->Form->fieldSelect("method", $this->Html->ifSet($methods), $this->Html->ifSet($vars->method), array('id' => "method"));
+								?>
+							</li>
+							<li id="piping" style="display:none;">
+								<?php
+								$this->Form->label($this->_("AdminDepartments.add.field_piping_config", true), "piping_config");
+								$this->Form->fieldText("piping_config", $this->Html->ifSet($piping_config), array('id'=>"piping_config", 'readonly'=>"readonly"));
+								?>
+								<span class="tooltip"><?php $this->_("AppController.tooltip.text");?><div><?php $this->_("AdminDepartments.!tooltip.piping_config");?></div></span>
+							</li>
+						</ul>
+						<ul id="pop3_fields">
+							<li>
+								<?php
+								$this->Form->label($this->_("AdminDepartments.add.field_security", true), "security");
+								$this->Form->fieldSelect("security", $this->Html->ifSet($security_types), $this->Html->ifSet($vars->security), array('id' => "security"));
+								?>
+							</li>
+							<li>
+								<?php
+								$this->Form->label($this->_("AdminDepartments.add.field_box_name", true), "box_name");
+								$this->Form->fieldText("box_name", $this->Html->ifSet($vars->box_name), array('id' => "box_name"));
+								?>
+							</li>
+							<li>
+								<?php
+								$this->Form->label($this->_("AdminDepartments.add.field_mark_messages", true), "mark_messages");
+								$this->Form->fieldSelect("mark_messages", $this->Html->ifSet($message_types), $this->Html->ifSet($vars->mark_messages), array('id' => "mark_messages"));
+								?>
+							</li>
+							<li>
+								<?php
+								$this->Form->label($this->_("AdminDepartments.add.field_host", true), "host");
+								$this->Form->fieldText("host", $this->Html->ifSet($vars->host), array('id' => "host"));
+								?>
+							</li>
+							<li>
+								<?php
+								$this->Form->label($this->_("AdminDepartments.add.field_user", true), "user");
+								$this->Form->fieldText("user", $this->Html->ifSet($vars->user), array('id' => "user"));
+								?>
+							</li>
+							<li>
+								<?php
+								$this->Form->label($this->_("AdminDepartments.add.field_pass", true), "pass");
+								$this->Form->fieldPassword("pass", array('id' => "pass", 'value' => $this->Html->ifSet($vars->pass)));
+								?>
+							</li>
+							<li>
+								<?php
+								$this->Form->label($this->_("AdminDepartments.add.field_port", true), "port");
+								$this->Form->fieldText("port", $this->Html->ifSet($vars->port), array('id' => "port", 'maxlength' => "6", 'class' => "small"));
+								?>
+							</li>
+						</ul>
+						<ul>
+							<li>
+								<?php
+								$this->Form->label($this->_("AdminDepartments.add.field_status", true), "status");
+								$this->Form->fieldSelect("status", $this->Html->ifSet($statuses), $this->Html->ifSet($vars->status), array('id' => "status"));
+								?>
+							</li>
+						</ul>
+					</div>
+					
+					<div class="button_row"><a class="btn_right submit" href="#"><?php $this->_("AdminDepartments.add.field_addsubmit");?></a></div>
+					<?php $this->Form->end();?>	
+				</div>
+				<?php $this->Widget->end();?>
+
+<?php
+$this->Javascript->setInline("
+$(document).ready(function() {
+	showPop3Fields();
+	$('#method').change(function() {
+		showPop3Fields();
+	});
+	
+	// Select piping command
+	$('#piping_config').focusin(function() {
+		$(this).select();
+	});
+});
+
+function showPop3Fields() {
+	if ($('#method').val() != 'pipe' && $('#method').val() != 'none')
+		$('#pop3_fields').show();
+	else
+		$('#pop3_fields').hide();
+	
+	if ($('#method').val() == 'pipe')
+		$('#piping').show();
+	else
+		$('#piping').hide();
+	return false;
+}
+");
+?>
