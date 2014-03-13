@@ -1,0 +1,1 @@
+        <?php echo($this->_("SupportManagerproPlugin.nav_primary_client.main", true));?><span class="top_row" style='margin-left: 5px; padding: 4px 7px 4px 7px;color: #fff;-webkit-border-radius: 5px;-moz-border-radius: 5px;border-radius: 5px;float: none !important'><?php echo($status_count['open']);?></span>

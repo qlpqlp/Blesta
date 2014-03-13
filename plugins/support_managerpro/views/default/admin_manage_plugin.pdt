@@ -1,0 +1,44 @@
+		<?php
+		$this->Widget->clear();
+		$this->Widget->create($this->_("SupportManagerproManagePlugin.index.boxtitle_manage", true));
+		$this->Form->create();
+		?>
+		<div class="inner">
+			<div class="pad">
+				<ul>
+					<li>
+						<?php $this->Form->label($this->_("SupportManagerproManagePlugin.index.SupportManagerpro_auto_refresh", true));?>
+						<?php $this->Form->fieldText("SupportManagerpro_auto_refresh", $this->Html->ifSet($vars->SupportManagerpro_auto_refresh));?>
+					</li>
+					<li>
+						<?php $this->Form->label($this->_("SupportManagerproManagePlugin.index.SupportManagerpro_time_format", true));?>
+						<?php $this->Form->fieldText("SupportManagerpro_time_format", $this->Html->ifSet($vars->SupportManagerpro_time_format));?>
+					</li>
+					<li>
+						<?php $this->Form->label($this->_("SupportManagerproManagePlugin.index.SupportManagerpro_reply_date_format", true));?>
+						<?php $this->Form->fieldText("SupportManagerpro_reply_date_format", $this->Html->ifSet($vars->SupportManagerpro_reply_date_format));?>
+					</li>
+					<li>
+						<?php $this->Form->label($this->_("SupportManagerproManagePlugin.index.SupportManagerpro_summary_truncate_length", true));?>
+						<?php $this->Form->fieldText("SupportManagerpro_summary_truncate_length", $this->Html->ifSet($vars->SupportManagerpro_summary_truncate_length));?>
+					</li>
+					<li>
+						<?php $this->Form->label($this->_("SupportManagerproManagePlugin.index.SupportManagerpro_summary_default", true));?>
+						<?php $this->Form->fieldText("SupportManagerpro_summary_default", $this->Html->ifSet($vars->SupportManagerpro_summary_default));?>
+					</li>
+					<li>
+						<?php $this->Form->label($this->_("SupportManagerproManagePlugin.index.SupportManagerpro_ticket_code_length", true));?>
+						<?php $this->Form->fieldText("SupportManagerpro_ticket_code_length", $this->Html->ifSet($vars->SupportManagerpro_ticket_code_length));?>
+					</li>
+				</ul>
+			</div>
+
+			<div class="button_row">
+				<a class="btn_right submit" href="#"><?php $this->_("SupportManagerproManagePlugin.index.submit");?></a>
+			</div>
+		</div>
+		<?php
+		$this->Form->end();
+		$this->Widget->end();
+		?>
+
