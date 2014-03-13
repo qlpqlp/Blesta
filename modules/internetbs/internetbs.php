@@ -235,7 +235,7 @@ class Internetbs extends Module {
 				}
 				// Handle registration
 				else {
-					
+
 					// Set all whois info from client ($vars['client_id'])
 					if (!isset($this->Clients))
 						Loader::loadModels($this, array("Clients"));
@@ -282,7 +282,7 @@ class Internetbs extends Module {
 					$fields = array_intersect_key($vars, $input_fields);
 
 					$command = new InternetbsAll($api);
-					$response = $command->Purchase($fields);
+					$response = $command->domain_create($fields);
 					$this->processResponse($api, $response);
 					
 					if ($this->Input->errors())
