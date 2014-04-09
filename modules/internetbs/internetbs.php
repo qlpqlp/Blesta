@@ -252,6 +252,7 @@ class Internetbs extends Module {
 						elseif (strpos($key, "lastname") !== false)
 							$vars[$key] = $client->last_name;
 						elseif (strpos($key, "street3") !== false)
+                            $vars[$key] = "";
 						elseif (strpos($key, "street2") !== false)
 							$vars[$key] = $client->address2;
 						elseif (strpos($key, "street") !== false)
