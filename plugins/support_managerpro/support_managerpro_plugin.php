@@ -13,7 +13,7 @@ class SupportManagerproPlugin extends Plugin {
 	/**
 	 * @var string The version of this plugin
 	 */
-	private static $version = "1.6.4";
+	private static $version = "1.6.5";
 	/**
 	 * @var string The authors of this plugin
 	 */
@@ -283,10 +283,8 @@ class SupportManagerproPlugin extends Plugin {
 		}
 
         //because we cannot get the ID from a field we will add the code to make the magic
-        $findcode = '</body>
-</html>';
-        $putbchatcode = '<?include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?></body>
-</html>';
+        $findcode = '</body>';
+        $putbchatcode = '<?include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?></body>';
         $path_to_file = VIEWDIR . "admin" . DS . "default" . DS . "structure.pdt";
         $putchat = file_put_contents($path_to_file, str_replace($findcode, $putbchatcode, file_get_contents($path_to_file)));
 
@@ -598,6 +596,8 @@ class SupportManagerproPlugin extends Plugin {
         $rmbchatcode = '';
         $path_to_file = VIEWDIR . "admin" . DS . "default" . DS . "structure.pdt";
         $rmchat = file_put_contents($path_to_file, str_replace($findcode, $rmbchatcode, file_get_contents($path_to_file)));
+        // remove nav cache
+        array_map('unlink', glob(CACHEDIR . "1" . DS . "nav" . DS . "*.html"));        
 	}
 
 	/**

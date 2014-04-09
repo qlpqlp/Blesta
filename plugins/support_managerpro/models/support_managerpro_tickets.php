@@ -90,7 +90,7 @@ class SupportManagerproTickets extends SupportManagerproModel {
 				$fields[] = "date_closed";
 				if ($vars['status'] == "closed") {
 					if (empty($vars['date_closed']))
-						$vars['date_closed'] = date("c");
+						$vars['date_closed'] = $this->dateToUtc(date("c"));
 				}
 				else
 					$vars['date_closed'] = null;

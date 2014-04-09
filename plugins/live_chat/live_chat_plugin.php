@@ -34,6 +34,9 @@ class LiveChatPlugin extends Plugin {
         $dbname = $db_info['database'];
         $dbport = 3306;
 
+        //duplicate settings file
+        copy(PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "_settings.ini.php",PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "settings.ini.php");
+
 		// find and replace the {{domain}} tag for the real domain
         $findcode = '{{domain}}';
         $putbchatcode = $_SERVER['HTTP_HOST'];
@@ -43,56 +46,49 @@ class LiveChatPlugin extends Plugin {
 		// find and replace the {{mysqlhost}} tag for the real blesta mysqlserver
         $findcode = '{{mysqlhost}}';
         $putbchatcode = $dbhost;
-        $path_to_file = PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "_settings.ini.php";
+        $path_to_file = PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "settings.ini.php";
         $putchat = file_put_contents($path_to_file, str_replace($findcode, $putbchatcode, file_get_contents($path_to_file)));
 
 		// find and replace the {{user}} tag for the real blesta mysql username
         $findcode = '{{user}}';
         $putbchatcode = $dbuser;
-        $path_to_file = PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "_settings.ini.php";
+        $path_to_file = PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "settings.ini.php";
         $putchat = file_put_contents($path_to_file, str_replace($findcode, $putbchatcode, file_get_contents($path_to_file)));
 
 		// find and replace the {{pass}} tag for the real blesta mysql password
         $findcode = '{{pass}}';
         $putbchatcode = $dbpass;
-        $path_to_file = PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "_settings.ini.php";
+        $path_to_file = PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "settings.ini.php";
         $putchat = file_put_contents($path_to_file, str_replace($findcode, $putbchatcode, file_get_contents($path_to_file)));
 
 		// find and replace the {{db}} tag for the real blesta mysql DB name
         $findcode = '{{db}}';
         $putbchatcode = $dbname;
-        $path_to_file = PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "_settings.ini.php";
+        $path_to_file = PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "settings.ini.php";
         $putchat = file_put_contents($path_to_file, str_replace($findcode, $putbchatcode, file_get_contents($path_to_file)));
 
 		// find and replace the {{port}} tag for the real blesta mysql port
         $findcode = '{{port}}';
         $putbchatcode = $dbport;
-        $path_to_file = PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "_settings.ini.php";
+        $path_to_file = PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "settings.ini.php";
         $putchat = file_put_contents($path_to_file, str_replace($findcode, $putbchatcode, file_get_contents($path_to_file)));
 
-        //check if blesta live chat is alredy installed
-        if (file_exists(PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "settings.ini.php")) {
-                //if blesta live chat settings.ini.php exists dont do anything
-            } else {
-                //if blesta live chat settings.ini.php dosent exists then rename the file settings.php and execute the SQL query
-                rename(PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "_settings.ini.php", PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "settings.ini.php");
-        		// Add all support tables, *IFF* not already added
-                $sql_load = file_get_contents(PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "BlestaLiveChat.sql");
-                $this->Record->query($sql_load);
+   		// Add all support tables, *IFF* not already added
+        $sql_load = file_get_contents(PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "BlestaLiveChat.sql");
+        $this->Record->query($sql_load);
 
-                //because we cannot get the ID from a field we will add the code to make the magic
-                $findcode = '</body>';
-                $putbchatcode = '<?include(PLUGINDIR . DS . "live_chat" . DS . "views" . DS . "default" . DS . "admin_live_chat_count_include.pdt");?></body>';
-                $path_to_file = VIEWDIR . "admin" . DS . "default" . DS . "structure.pdt";
-                $putchat = file_put_contents($path_to_file, str_replace($findcode, $putbchatcode, file_get_contents($path_to_file)));
+        //because we cannot get the ID from a field we will add the code to make the magic
+        $findcode = '</body>';
+        $putbchatcode = '<?include(PLUGINDIR . DS . "live_chat" . DS . "views" . DS . "default" . DS . "admin_live_chat_count_include.pdt");?></body>';
+        $path_to_file = VIEWDIR . "admin" . DS . "default" . DS . "structure.pdt";
+        $putchat = file_put_contents($path_to_file, str_replace($findcode, $putbchatcode, file_get_contents($path_to_file)));
 
-                //because we cannot get the ID from a field we will add the code to make the magic
-                $findcode = '</body>';
-                $putbchatcode = '<?include(PLUGINDIR . DS . "live_chat" . DS . "views" . DS . "default" . DS . "client_live_chat_include.pdt");?></body>';
-                $path_to_file = VIEWDIR . "client" . DS . "default" . DS . "structure.pdt";
-                $putchat = file_put_contents($path_to_file, str_replace($findcode, $putbchatcode, file_get_contents($path_to_file)));
+        //because we cannot get the ID from a field we will add the code to make the magic
+        $findcode = '</body>';
+        $putbchatcode = '<?include(PLUGINDIR . DS . "live_chat" . DS . "views" . DS . "default" . DS . "client_live_chat_include.pdt");?></body>';
+        $path_to_file = VIEWDIR . "client" . DS . "default" . DS . "structure.pdt";
+        $putchat = file_put_contents($path_to_file, str_replace($findcode, $putbchatcode, file_get_contents($path_to_file)));
 
-        }
 
 	}
 
@@ -126,7 +122,7 @@ class LiveChatPlugin extends Plugin {
 
 		if ($last_instance) {
 			// Remove all settings created by this plugin
-			$this->Record->drop("lh_abstract_auto_responder");
+		    $this->Record->drop("lh_abstract_auto_responder");
 			$this->Record->drop("lh_abstract_email_template");
 			$this->Record->drop("lh_abstract_proactive_chat_invitation");
 			$this->Record->drop("lh_canned_msg");
@@ -165,6 +161,12 @@ class LiveChatPlugin extends Plugin {
         $rmbchatcode = '';
         $path_to_file = VIEWDIR . "client" . DS . "default" . DS . "structure.pdt";
         $rmchat = file_put_contents($path_to_file, str_replace($findcode, $rmbchatcode, file_get_contents($path_to_file)));
+
+        // remove nav cache
+        array_map('unlink', glob(CACHEDIR . "1" . DS . "nav" . DS . "*.html"));
+
+        // remove BLC settings file
+        unlink(PLUGINDIR . DS . "live_chat" . DS . "vendors" . DS . "blc" . DS . "settings" . DS . "settings.ini.php");
 		}
 	}
 
@@ -183,7 +185,7 @@ class LiveChatPlugin extends Plugin {
 			// Staff Nav
 			array(
 				'action' => "nav_primary_staff",
-				'uri' => $this->base_uri."../plugins/live_chat/vendors/blc/index.php/site_admin/",
+				'uri' => "../plugins/live_chat/vendors/blc/index.php/site_admin/",
 				'name' => Language::_("LiveChatPlugin.name", true),
 			),
 

@@ -64,11 +64,9 @@ class EmailParser {
 				Loader::load(PLUGINDIR . "support_managerpro" . DS . "vendors" . DS . "html2text" . DS . "html2text.class.php");
 
 			$html = $this->getBody($email, "html");
-
 			$html2text = new html2text($html);
 			unset($html);
 			$text = $html2text->get_text();
-
 			unset($html2text);
 		}
 		
@@ -93,8 +91,7 @@ class EmailParser {
 				$charset = $this->getCharset($encodings[$i]['content-type']);
 
 			if (strtoupper($charset) != "UTF-8")
-
-				$text .= $this->convertEncoding($body, $charset, "UTF-8");
+				$text .= $email->convertEncoding($body, $charset, "UTF-8");
 			else
 				$text .= $body;
 		}
@@ -109,21 +106,8 @@ class EmailParser {
 	 * @return string The subject in UTF-8
 	 */
 	public function getSubject(MimeMailParser $email) {
-		$charset = $this->getCharset($email->getHeader('content-type'));
-		if (!$charset)
-			$charset = "UTF-8";
-
-		$subject = $email->getHeader('subject');
-
-		// Convert to UTF-8 if needed
-		if (strtoupper($charset) != "UTF-8")
-
-			$subject = $this->convertEncoding($subject, $charset, "UTF-8");
-
-		return $subject;
+		return $email->getHeader('subject', "UTF-8");
 	}
-
-
 
 	/**
 	 * Writes the email attachments to a temp directory and returns an array
@@ -165,37 +149,7 @@ class EmailParser {
 		}
 		return $files;
 	}
-	
-	/**
-	 * Convert the given string from the given character set into another
-	 * character set. Prefers the use of iconv(), but will fallback to
-	 * mb_convert_encoding() if iconv() conversion fails.
-	 *
-	 * @param string $text The text to convert
-	 * @param string $from_charset the charset to convert from
-	 * @param string $to_charset The charset to convert to
-	 * @retrun string The converted text
-	 */
-	public function convertEncoding($text, $from_charset, $to_charset="UTF-8") {
 
-        // Decode encoded characters
-        $text = html_entity_decode($text);
-
-		// Prefer conversion using iconv, but if the character set is not
-		// supported, then fallback to mb_convert_encoding
-		try {
-			return iconv($from_charset, $to_charset, $text);
-		}
-		catch (Exception $e) {
-			try {
-				return mb_convert_encoding($text, $to_charset, $from_charset);
-			}
-			catch (Exception $e) {
-				// Can't convert at all... return what we have because at least that's something
-				return $text;
-			}
-		}
-	}
 
 	/**
 	 * Fetches the from name. Also converts encoding to UTF-8.

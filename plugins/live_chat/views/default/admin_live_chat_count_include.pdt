@@ -18,7 +18,7 @@ $(document).ready(function() {
 });
 jQuery(function($){
   $( document ).ready(function() {
-    $.get( '<?php echo($this->base_uri);?>plugin/live_chat/admin_live_chat_count/', function(newRowCount){
+    $.get( '<?php echo($this->base_uri);?>../plugin/live_chat/admin_live_chat_count/', function(newRowCount){
       $("a[href='<?php echo($this->base_uri);?>../plugins/live_chat/vendors/blc/index.php/site_admin/']").html( newRowCount.trim() );
     });
   });

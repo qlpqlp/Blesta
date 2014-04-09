@@ -12,7 +12,7 @@ class Internetbs extends Module {
 	/**
 	 * @var string The version of this module
 	 */
-	private static $version = "1.0.1";
+	private static $version = "1.0.2";
 	/**
 	 * @var string The authors of this module
 	 */
@@ -204,21 +204,22 @@ class Internetbs extends Module {
 		if (isset($vars['use_module']) && $vars['use_module'] == "true") {
 			if ($package->meta->type == "domain") {
 
-				$vars['NumYears'] = 1;
-				$vars['SLD'] = substr($vars['domain'], 0, -strlen($tld));
-				$vars['TLD'] = ltrim($tld, ".");
-				
+				$vars['regperiod'] = 1 . "Y";
+				//$vars['SLD'] = substr($vars['domain'], 0, -strlen($tld));
+				//$vars['TLD'] = ltrim($tld, ".");
+				$vars['domain'] = $vars['domain'];
+
 				foreach ($package->pricing as $pricing) {
 					if ($pricing->id == $vars['pricing_id']) {
-						$vars['NumYears'] = $pricing->term;
+						$vars['regperiod'] = $pricing->term . "Y";
 						break;
 					}
 				}
 				
 				// Handle transfer
 				if (isset($vars['transfer_key'])) {
-					$vars['DomainCount'] = "1";
-					$vars['UseContacts'] = "1";
+					//$vars['DomainCount'] = "1";
+					//$vars['UseContacts'] = "1";
 					$vars['domain'] = $vars['domain'];
 					$vars['transferAuthInfo'] = $vars['transfer_key'];
 					
@@ -246,39 +247,43 @@ class Internetbs extends Module {
 					$numbers = $this->Contacts->getNumbers($client->contact_id, "phone");
 
 					foreach ($whois_fields as $key => $value) {
-						if (strpos($key, "FirstName") !== false)
+						if (strpos($key, "firstname") !== false)
 							$vars[$key] = $client->first_name;
-						elseif (strpos($key, "LastName") !== false)
+						elseif (strpos($key, "lastname") !== false)
 							$vars[$key] = $client->last_name;
-						elseif (strpos($key, "Address1") !== false)
-							$vars[$key] = $client->address1;
-						elseif (strpos($key, "Address2") !== false)
+						elseif (strpos($key, "street3") !== false)
+						elseif (strpos($key, "street2") !== false)
 							$vars[$key] = $client->address2;
-						elseif (strpos($key, "City") !== false)
+						elseif (strpos($key, "street") !== false)
+							$vars[$key] = $client->address1;
+						elseif (strpos($key, "city") !== false)
 							$vars[$key] = $client->city;
-						elseif (strpos($key, "StateProvince") !== false)
-							$vars[$key] = $client->state;
-						elseif (strpos($key, "PostalCode") !== false)
+						elseif (strpos($key, "postalcode") !== false)
 							$vars[$key] = $client->zip;
-						elseif (strpos($key, "Country") !== false)
+						elseif (strpos($key, "countrycode") !== false)
 							$vars[$key] = $client->country;
-						elseif (strpos($key, "Phone") !== false)
+						elseif (strpos($key, "phonenumber") !== false)
 							$vars[$key] = $this->formatPhone(isset($numbers[0]) ? $numbers[0]->number : null, $client->country);
-						elseif (strpos($key, "EmailAddress") !== false)
+						elseif (strpos($key, "email") !== false)
 							$vars[$key] = $client->email;
 					}
-					
-					$vars['UseDNS'] = "default";
+
+					//$vars['UseDNS'] = "default";
+
+                	$nslist = array ();
 					for ($i=1; $i<=5; $i++) {
 						if (!isset($vars["ns" . $i]) || $vars["ns" . $i] == "")
 							unset($vars["ns" . $i]);
 						else
-							unset($vars['UseDNS']);
+							//unset($vars['UseDNS']);
+                            array_push ($nslist,$vars["ns$i"]);
 					}
-					
-					if ($tld = ".asia")
-						$vars['asia_cclocality'] = $client->country;
-					
+
+                	// ns_list is optional
+                	if(count($nslist)) {
+                		$vars['ns_list'] = trim(implode(',',$nslist),",");
+                	}
+
 					$fields = array_intersect_key($vars, $input_fields);
 
 					$command = new InternetbsAll($api);

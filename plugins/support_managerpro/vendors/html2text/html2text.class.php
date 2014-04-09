@@ -168,22 +168,22 @@ class html2text
         '/(<tr[^>]*>|<\/tr>)/i',                 // <tr> and </tr>
         '/<td[^>]*>(.*?)<\/td>/i',               // <td> and </td>
         '/<th[^>]*>(.*?)<\/th>/ie',              // <th> and </th>
-        '/&(nbsp|#160);/i',                      // Non-breaking space
-        '/&(quot|rdquo|ldquo|#8220|#8221|#147|#148);/i',
+        //'/&(nbsp|#160);/i',                      // Non-breaking space
+        //'/&(quot|rdquo|ldquo|#8220|#8221|#147|#148);/i',
                                                  // Double quotes
-        '/&(apos|rsquo|lsquo|#8216|#8217);/i',   // Single quotes
-        '/&gt;/i',                               // Greater-than
-        '/&lt;/i',                               // Less-than
-        '/&(amp|#38);/i',                        // Ampersand
-        '/&(copy|#169);/i',                      // Copyright
-        '/&(trade|#8482|#153);/i',               // Trademark
-        '/&(reg|#174);/i',                       // Registered
-        '/&(mdash|#151|#8212);/i',               // mdash
-        '/&(ndash|minus|#8211|#8722);/i',        // ndash
-        '/&(bull|#149|#8226);/i',                // Bullet
-        '/&(pound|#163);/i',                     // Pound sign
-        '/&(euro|#8364);/i',                     // Euro sign
-        //'/&[^&;]+;/i',                           // Unknown/unhandled entities
+        //'/&(apos|rsquo|lsquo|#8216|#8217);/i',   // Single quotes
+        //'/&gt;/i',                               // Greater-than
+        //'/&lt;/i',                               // Less-than
+        //'/&(amp|#38);/i',                        // Ampersand
+        //'/&(copy|#169);/i',                      // Copyright
+        //'/&(trade|#8482|#153);/i',               // Trademark
+        //'/&(reg|#174);/i',                       // Registered
+        //'/&(mdash|#151|#8212);/i',               // mdash
+        //'/&(ndash|minus|#8211|#8722);/i',        // ndash
+        //'/&(bull|#149|#8226);/i',                // Bullet
+        //'/&(pound|#163);/i',                     // Pound sign
+        //'/&(euro|#8364);/i',                     // Euro sign
+        //'/&[^&;]+;/i',                             // Unknown/unhandled entities
         '/[ ]{2,}/'                              // Runs of spaces, post-handling
     );
 
@@ -221,20 +221,20 @@ class html2text
         "\n",                                   // <tr> and </tr>
         "\t\t\\1\n",                            // <td> and </td>
         "strtoupper(\"\t\t\\1\n\")",            // <th> and </th>
-        ' ',                                    // Non-breaking space
-        '"',                                    // Double quotes
-        "'",                                    // Single quotes
-        '>',
-        '<',
-        '&',
-        '(c)',
-        '(tm)',
-        '(R)',
-        '--',
-        '-',
-        '*',
-        '£',
-        'EUR',                                  // Euro sign. € ?
+        //' ',                                    // Non-breaking space
+        //'"',                                    // Double quotes
+        //"'",                                    // Single quotes
+        //'>',
+        //'<',
+        //'&',
+        //'(c)',
+        //'(tm)',
+        //'(R)',
+        //'--',
+        //'-',
+        //'*',
+        //'£',
+        //'EUR',                                  // Euro sign. € ?
         //'',                                     // Unknown/unhandled entities
         ' '                                     // Runs of spaces, post-handling
     );
@@ -337,7 +337,7 @@ class html2text
             $this->_convert();
         }
 
-        return $this->text;
+        return html_entity_decode($this->text, ENT_QUOTES, "UTF-8");
     }
 
     /**

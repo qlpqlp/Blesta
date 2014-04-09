@@ -177,7 +177,7 @@ INSERT INTO `lh_chat_config` (`identifier`, `value`, `type`, `explain`, `hidden`
 ('track_online_visitors', '1', 0, 'Enable online site visitors tracking', 0),
 ('pro_active_invite', '0', 0, 'Is pro active chat invitation active. Online users tracking also has to be enabled', 0),
 ('customer_company_name', 'Blesta Live Chat', 0, 'Your company name - visible in bottom left corner', 0),
-('customer_site_url', 'http://{{domain}}', 0, 'Your site URL address', 0),
+('customer_site_url', 'http://dev.on.gweb.pt', 0, 'Your site URL address', 0),
 ('smtp_data', 'a:5:{s:4:"host";s:0:"";s:4:"port";s:2:"25";s:8:"use_smtp";i:0;s:8:"username";s:0:"";s:8:"password";s:0:"";}', 0, 'SMTP configuration', 1),
 ('chatbox_data', 'a:6:{i:0;b:0;s:20:"chatbox_auto_enabled";i:0;s:19:"chatbox_secret_hash";s:9:"9xhd2i9lu";s:20:"chatbox_default_name";s:7:"Chatbox";s:17:"chatbox_msg_limit";i:50;s:22:"chatbox_default_opname";s:7:"Manager";}', 0, 'Chatbox configuration', 1),
 ('start_chat_data', 'a:27:{i:0;b:0;s:21:"name_visible_in_popup";b:1;s:27:"name_visible_in_page_widget";b:1;s:19:"name_require_option";s:8:"required";s:22:"email_visible_in_popup";b:1;s:28:"email_visible_in_page_widget";b:1;s:20:"email_require_option";s:8:"required";s:24:"message_visible_in_popup";b:1;s:30:"message_visible_in_page_widget";b:1;s:22:"message_require_option";s:8:"required";s:22:"phone_visible_in_popup";b:1;s:28:"phone_visible_in_page_widget";b:1;s:20:"phone_require_option";s:8:"optional";s:21:"force_leave_a_message";b:1;s:29:"offline_name_visible_in_popup";b:1;s:35:"offline_name_visible_in_page_widget";b:1;s:27:"offline_name_require_option";s:8:"required";s:30:"offline_phone_visible_in_popup";b:1;s:36:"offline_phone_visible_in_page_widget";b:1;s:28:"offline_phone_require_option";s:8:"optional";s:32:"offline_message_visible_in_popup";b:1;s:38:"offline_message_visible_in_page_widget";b:1;s:30:"offline_message_require_option";s:8:"required";s:20:"tos_visible_in_popup";b:0;s:26:"tos_visible_in_page_widget";b:0;s:28:"offline_tos_visible_in_popup";b:0;s:34:"offline_tos_visible_in_page_widget";b:0;}', 0, '', 1),
@@ -201,7 +201,7 @@ INSERT INTO `lh_chat_config` (`identifier`, `value`, `type`, `explain`, `hidden`
 ('sync_sound_settings', 'a:15:{i:0;b:0;s:12:"repeat_sound";i:1;s:18:"repeat_sound_delay";i:5;s:10:"show_alert";b:1;s:22:"new_chat_sound_enabled";b:1;s:31:"new_message_sound_admin_enabled";b:1;s:30:"new_message_sound_user_enabled";b:1;s:14:"online_timeout";d:300;s:22:"check_for_operator_msg";d:10;s:21:"back_office_sinterval";d:10;s:22:"chat_message_sinterval";d:3.5;s:20:"long_polling_enabled";b:0;s:30:"polling_chat_message_sinterval";d:1.5;s:29:"polling_back_office_sinterval";d:5;s:18:"connection_timeout";i:30;}', 0, '', 1),
 ('sound_invitation', '1', 0, 'Play sound on invitation to chat.', 0),
 ('explicit_http_mode', '', 0, 'Please enter explicit http mode. Either http: or https:, do not forget : at the end.', 0),
-('track_domain', '{{domain}}', 0, 'Set your domain to enable user tracking across different domain subdomains.', 0),
+('track_domain', 'dev.on.gweb.pt', 0, 'Set your domain to enable user tracking across different domain subdomains.', 0),
 ('max_message_length', '500', 0, 'Maximum message length in characters', 0),
 ('geo_data', 'a:3:{i:0;b:0;s:21:"geo_detection_enabled";i:1;s:22:"geo_service_identifier";s:9:"freegeoip";}', 0, '', 1);
 

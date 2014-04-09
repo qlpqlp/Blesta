@@ -188,15 +188,16 @@ class MimeMailParser
    * Retrieve a specific Email Header
    * @return String
    * @param $name String Header name
+   * @param $to_charset The charset to convert to
    */
-  public function getHeader($name)
+  public function getHeader($name, $to_charset = "UTF-8")
   {
     if (isset($this->parts[1]))
     {
       $headers = $this->getPartHeaders($this->parts[1]);
       if (isset($headers[$name]))
       {
-        return $this->_decodeHeader($headers[$name]);
+        return $this->decodeHeader($headers[$name], $to_charset);
       }
     }
     else
@@ -310,7 +311,7 @@ class MimeMailParser
     foreach ($this->parts as $part)
     {
       $disposition = $this->getPartContentDisposition($part);
-      if (in_array($disposition, $dispositions))
+      if (in_array($disposition, $dispositions) && isset($part['disposition-filename']))
       {
         $attachments[] = new MimeMailParser_attachment(
             $part['disposition-filename'],
@@ -322,6 +323,36 @@ class MimeMailParser
       }
     }
     return $attachments;
+  }
+  
+  /**
+   * Return the string in the given charset
+   *
+   * @return string
+   * @param $text string
+   * @param $from_charset string
+   * $param $to_charset string
+   */
+  public function convertEncoding($text, $from_charset, $to_charset = "UTF-8")
+  {
+    // Prefer conversion using iconv, but if the character set is not
+    // supported, then fallback to mb_convert_encoding
+    try
+	{
+      return iconv($from_charset, $to_charset, $text);
+    }
+    catch (Exception $e)
+	{
+      try
+	  {
+        return mb_convert_encoding($text, $to_charset, $from_charset);
+      }
+      catch (Exception $e)
+	  {
+        // Can't convert at all... return what we have because at least that's something
+        return $text;
+      }
+    }
   }
 
   /**
@@ -573,7 +604,7 @@ class MimeMailParser
    * examples (in RFC2047).
    *
    * @param string Input header value to decode
-   * @return string Decoded header value
+   * @return Array an array of text and charsets
    * @access private
    */
   private function mimeDecodeHeader($input)
@@ -581,17 +612,17 @@ class MimeMailParser
 	
 	// Use the faster impac_mime_header_decode function if it exists
 	if (function_exists("imap_mime_header_decode")) {
-		$parts = imap_mime_header_decode($input);
-		$input = "";
-		for ($i=0; $i<count($parts); $i++)
-			$input .= $parts[$i]->text;
-		return $input;
+		return imap_mime_header_decode($input);
 	}
 	
 	// Remove white space between encoded-words
 	$input = preg_replace('/(=\?[^?]+\?(q|b)\?[^?]*\?=)(\s)+=\?/i', '\1=?', $input);
 
+	$parts = array();
+	$parts[] = (object)array('charset' => "default", 'text' => $input);
+
 	// For each encoded-word...
+	$i=0;
 	while (preg_match('/(=\?([^?]+)\?(q|b)\?([^?]*)\?=)/i', $input, $matches)) {
 
 		$encoded  = $matches[1];
@@ -612,10 +643,11 @@ class MimeMailParser
 				break;
 		}
 
+		$parts[$i++] = (object)array('charset' => $charset, 'text' => $text);
 		$input = str_replace($encoded, $text, $input);
 	}
 
-	return $input;
+	return $parts;
   }
 
   /**
@@ -623,16 +655,34 @@ class MimeMailParser
    * @param string,array $input
    * @return string,array
    */
-  private function _decodeHeader($input)
+  private function decodeHeader($input, $to_charset = "UTF-8")
   {
 	  if(is_array($input))
 	  {
 		  $new = array();
 		  foreach($input as $i)
-			  $new[] = $this->mimeDecodeHeader($i);
+			  $new[] = $this->convertHeader($this->mimeDecodeHeader($i), $to_charset);
 		  return $new;
 	  }
 	  else
-		  return $this->mimeDecodeHeader($input);
+		  return $this->convertHeader($this->mimeDecodeHeader($input), $to_charset);
+  }
+  
+  /**
+   * Conver an array of MIME header text to a string of text
+   * 
+   * @param array $mime_header An array of stdClass objects with 'text' and 'charset' properties
+   * @param string $to_charset The character set to convert the header into
+   * @return string A string representing the text of the MIME headers
+   */
+  private function convertHeader($mime_header, $to_charset)
+  {
+	$text = null;
+	foreach ($mime_header as $part)
+	{
+		$text .= $this->convertEncoding($part->text, $part->charset == "default" ? "ASCII" : $part->charset, $to_charset);
+	}
+	return $text;
+	
   }
 }
