@@ -1,0 +1,88 @@
+	<?php
+	$this->Form->create();
+	?>
+	<div class="pad">
+    <div class="table_sec">
+            <table class="table">
+				<thead>
+              <tr class="heading_row">
+                <td>
+        			<h3>
+        		<?php $this->_("Internetbs.tab_emailforwardingver.field_source");?>
+                    </h3>
+                </td>
+                <td></td>
+                <td>
+        			<h3>
+        		<?php $this->_("Internetbs.tab_emailforwardingver.field_destination"); ?>
+                    </h3>
+                </td>
+              </tr>
+				</thead>
+					<tbody>
+						<?php
+						$num_efowards = count($this->Html->ifSet($vars->efdestination));
+						for ($i=0; $i<max(1,$num_efowards); $i++) {
+						?>
+						<tr class="ef_row<?php echo ($i%2 == 1) ? " odd_row" : "";?>">
+                          <td><?php $this->Form->fieldText("efsource[]", $this->Html->ifSet($vars->efsource[$i]), array('id' => "efsource" . $i+1)); ?></td>
+                          <td>@<?php echo $this->Html->ifSet($vars->domain); ?> =></td>
+                          <td><?php $this->Form->fieldText("efdestination[]", $this->Html->ifSet($vars->efdestination[$i]), array('id' => "efdestination" . $i+1)); ?>&nbsp;&nbsp;<a href="#" class="manage ef_row_remove"><?php $this->_("Internetbs.remove_row");?></a></td>
+						</tr>
+                        <?php $this->Form->fieldHidden("efsourceh[]", $this->Html->ifSet($vars->efsource[$i]), array('id' => "efsourceh" . $i+1)); ?>
+						<?php
+						}
+						?>
+						<tr>
+                          <td colspan="3" style="padding-top: 20px">
+			            	<div class="links_row">
+			            		<a class="btn_right ef_row_add" href="#"><span><?php $this->_("Internetbs.add_more_row");?></span></a>
+			            	</div>
+                          </td>
+						</tr>
+                    </tbody>
+            </table>
+            </div>
+	</div>
+
+	<div class="button_row"><a class="btn_right submit" href="#"><?php $this->_("Internetbs.tab_emailforwarding.field_submit");?></a></div>
+	<?php
+	$this->Form->end();
+	?>
+<script type="text/javascript">
+$(document).ready(function() {
+	// Add a row
+	$('.ef_row_add').click(function() {
+		var fields = $('tr.ef_row:first').clone(true);
+		$(fields).find('input').val('');
+		$('td:first span', fields).text($('tr.ef_row').length+1);
+		$('tr.ef_row:last').after(fields);
+		updateNsRows();
+		return false;
+	});
+	// Remove a row
+	$('.ef_row_remove').click(function() {
+		if ($('tr.ef_row').length > 1) {
+			$(this).closest('tr').remove();
+			// Reorder the counts for these rows
+			$i=1;
+			$('tr.ef_row').each(function() {
+				$('td:first span', this).text($i++);
+			});
+		}
+		updateNsRows();
+		return false;
+	});
+});
+
+// Zebra-stripe pricing rows
+function updateNsRows() {
+	var i = 0;
+	$('tr.ef_row').each(function() {
+		if (i++%2 == 1)
+			$(this).addClass('odd_row');
+		else
+			$(this).removeClass('odd_row');
+	});
+}
+</script>

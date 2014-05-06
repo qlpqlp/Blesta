@@ -6,6 +6,8 @@ $lang['Internetbs.module_row_plural'] = "Accounts";
 
 // Module management
 $lang['Internetbs.add_module_row'] = "Add Account";
+$lang['Internetbs.add_more_row'] = "Add More";
+$lang['Internetbs.remove_row'] = "Remove";
 $lang['Internetbs.manage.module_rows_title'] = "Accounts";
 $lang['Internetbs.manage.module_rows_heading.user'] = "API Key";
 $lang['Internetbs.manage.module_rows_heading.key'] = "Password";
@@ -45,7 +47,6 @@ $lang['Internetbs.package_fields.ns4'] = "Name Server 4";
 $lang['Internetbs.package_fields.ns5'] = "Name Server 5";
 
 // Service management
-
 $lang['Internetbs.tab_whois.title'] = "Whois";
 $lang['Internetbs.tab_whois.section_Registrant'] = "Registrant";
 $lang['Internetbs.tab_whois.section_Admin'] = "Administrative";
@@ -56,6 +57,13 @@ $lang['Internetbs.tab_whois.field_submit'] = "Update Whois";
 $lang['Internetbs.tab_nameservers.title'] = "Name Servers";
 $lang['Internetbs.tab_nameserver.field_ns'] = "Name Server %1\$s"; // %1$s is the name server number
 $lang['Internetbs.tab_nameservers.field_submit'] = "Update Name Servers";
+
+$lang['Internetbs.tab_dns.title'] = "DNS Records";
+
+$lang['Internetbs.tab_emailforwarding.title'] = "Email Forwarding";
+$lang['Internetbs.tab_emailforwardingver.field_source'] = "Email Prefix";
+$lang['Internetbs.tab_emailforwardingver.field_destination'] = "Email to Foward";
+$lang['Internetbs.tab_emailforwarding.field_submit'] = "Update Email Fowards";
 
 $lang['Internetbs.tab_settings.title'] = "Settings";
 $lang['Internetbs.tab_settings.field_registrar_lock'] = "Registrar Lock";

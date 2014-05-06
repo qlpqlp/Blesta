@@ -1,77 +1,113 @@
+
 	<?php
 	$this->Form->create();
 	?>
-	
-	<?php
-	$i=0;
-	foreach ($sections as $key) {
-	?>
-	<div class="heading options<?php echo ($i == 0 ? " first" : "");?>">
-		<h5><?php $this->_("Internetbs.tab_whois.section_" . $key);?></h5>
-	</div>
-	<div class="pad">
-		<ul>
+	<div class="row panel-fix">
+		<div class="col-md-12">
+<ul class="nav nav-tabs">
+<?php
+        $i=0;
+		foreach ($sections as $key) {
+		    $active="";
+			if ($i == 0) {
+                $active = ' class="active"';
+                $i++;
+			}
+?>
+  <li<?php echo $active;?>><a href="#<?php echo $key ?>" data-toggle="tab"><?php $this->_("Internetbs.tab_whois.section_" . $key);?></a></li>
+<?php } ?>
+</ul>
+<div class="tab-content">
+		<?php
+        $i=0;
+		foreach ($sections as $key) {
+		    $active="";
+			if ($i == 0) {
+                $active = ' active';
+                $i++;
+			}else{
+                $active = ' fade';
+			}
+		?>
+
+        <div class="tab-pane <?php echo $active;?>" id="<?php echo $key ?>">
+
 			<?php
 			foreach ($fields as $field) {
 				if (substr($field->params['for'], 0, strlen($key)) != $key)
 					continue;
 			?>
-			<li>
+			<div class="form-group">
 				<?php
-				// Draw the primary label/field
-				call_user_func_array(array($this->Form, $field->type), $field->params);
-				
 				// Draw each form field associated with this label
 				$tooltips = array();
 				foreach ($field->fields as $input) {
-					
+
 					// Collect all tooltips to be displayed at the end
 					if ($input->type == "tooltip") {
 						$tooltips[] = $input;
 						continue;
 					}
-					
-					call_user_func_array(array($this->Form, $input->type), $input->params);
-					
+
 					// Draw the form field's secondary label if checkbox or radio item
 					if (($input->type == "fieldCheckbox" || $input->type == "fieldRadio") && isset($input->label)) {
-						if (isset($input->label->params['attributes']['class'])) {
-							if (is_array($input->label->params['attributes']['class']))
-								$input->label->params['attributes']['class'][] = "inline";
+						$type = ($input->type == "fieldCheckbox" ? "checkbox" : "radio");
+					?>
+					<div class="<?php $this->Html->_($type);?>">
+						<label>
+							<?php
+							call_user_func_array(array($this->Form, $field->type), $field->params);
+							$this->Html->_($field->params['name']);
+							?>
+						</label>
+						<?php
+						foreach ($tooltips as $tooltip) {
+						?>
+						<a href="#" data-toggle="tooltip" title="<?php $this->Html->_($tooltip->params['message']);?>"><i class="fa fa-question-circle text-primary"></i></a>
+						<?php
+						}
+						?>
+					</div>
+					<?php
+					}
+					else {
+						if (isset($input->params['attributes']['class'])) {
+							if (is_array($input->params['attributes']['class']))
+								$input->params['attributes']['class'][] = "form-control";
 							else
-								$input->label->params['attributes']['class'] .= " inline";
+								$input->params['attributes']['class'] .= " form-control";
 						}
 						else
-							$input->label->params['attributes']['class'] = "inline";
-							
-						call_user_func_array(array($this->Form, "label"), $input->label->params);
+							$input->params['attributes']['class'] = "form-control";
+
+						$input->params['attributes']['placeholder'] = $this->Html->ifSet($field->params['name']);
+
+						// Draw the primary label/field
+						call_user_func_array(array($this->Form, $field->type), $field->params);
+						call_user_func_array(array($this->Form, $input->type), $input->params);
+
+						foreach ($tooltips as $tooltip) {
+						?>
+						<a href="#" data-toggle="tooltip" title="<?php $this->Html->_($tooltip->params['message']);?>"><i class="fa fa-question-circle text-primary"></i></a>
+						<?php
+						}
 					}
 				}
-				
-				foreach ($tooltips as $tooltip) {
 				?>
-				<span class="tooltip">
-					<?php $this->_("AppController.tooltip.text");?>
-					<div><?php $this->Html->_($tooltip->params['message']);?></div>
-				</span>
-				<?php
-				}
-				?>
-			</li>
+			</div>
 			<?php
 			}
-			?>
-		</ul>
-	</div>
-	<?php
-		$i++;
-	}
-	?>
-	<div class="button_row">
-		<div class="btn submit right_btn">
-			<a class="submit" href="#"><?php $this->_("Internetbs.tab_whois.field_submit");?></a>
+            ?>
+                    </div>
+            <?php
+		}
+		?>
 		</div>
 	</div>
+	</div>
+	<button class="btn btn-default pull-right" type="submit">
+		<i class="fa fa-edit"></i> <?php $this->_("Internetbs.tab_whois.field_submit");?>
+	</button>
 	<?php
 	$this->Form->end();
 	?>

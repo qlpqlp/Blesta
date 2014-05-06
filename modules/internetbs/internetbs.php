@@ -12,18 +12,18 @@ class Internetbs extends Module {
 	/**
 	 * @var string The version of this module
 	 */
-	private static $version = "1.0.2";
+	private static $version = "1.0.3";
 	/**
 	 * @var string The authors of this module
 	 */
 	private static $authors = array(
 		array(
-			'name'=> "Infoscan - Informática, Lda.",
+			'name'=> "Infoscan - Informatica, Lda [WebLX]",
 			'url'=>"http://www.weblx.pt"
 		),
 		array(
-			'name'=> "WebLX (Portugal)",
-			'url'=>"http://www.weblx.pt"
+			'name'=> "| (If you like it, click here to donate by PayPal)",
+			'url'=>"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=CKNEWEGABW47A"
 		)
 	);
 
@@ -182,20 +182,24 @@ class Internetbs extends Module {
 			$tld = $this->getTld($vars['domain']);
 		
 		if ($package->meta->type == "domain") {
-			if (array_key_exists("transferAuthInfo", $vars)) {
-				$input_fields = array_merge(Configure::get("Internetbs.transfer_fields"),
+			if (array_key_exists("transfer_key", $vars)) {
+				$whois_fields = Configure::get("Internetbs.whois_fields");
+	    		$input_fields = array_merge(Configure::get("Internetbs.domain_fields"), $whois_fields,
+                (array)Configure::get("Internetbs.transfer_fields"),
 					array(
-						'OrderType' => true, 'UseContacts' => true, 'DomainCount' => true,
-						'NumYears' => true, 'SLD1' => true, 'TLD1' => true,
-						'AuthInfo1' => true, 'UseDNS' => true
+						'period' => true, 'domain' => true,
+						'transferAuthInfo' => true
 					)
 				);
+
+
+
 			}
 			else {
 				$whois_fields = Configure::get("Internetbs.whois_fields");
 				$input_fields = array_merge(Configure::get("Internetbs.domain_fields"), $whois_fields,
 					(array)Configure::get("Internetbs.domain_fields" . $tld),
-					array('NumYears' => true, 'SLD' => true, 'TLD' => true, 'SLD1' => true, 'TLD1' => true, 'DomainCount' => 1, 'UseDNS' => true),
+					array('period' => true, 'domain' => true),
 					(array)Configure::get("Internetbs.nameserver_fields")
 				);
 			}
@@ -204,59 +208,40 @@ class Internetbs extends Module {
 		if (isset($vars['use_module']) && $vars['use_module'] == "true") {
 			if ($package->meta->type == "domain") {
 
-				$vars['regperiod'] = 1 . "Y";
+				$vars['period'] = 1 . "Y";
 				//$vars['SLD'] = substr($vars['domain'], 0, -strlen($tld));
 				//$vars['TLD'] = ltrim($tld, ".");
 				$vars['domain'] = $vars['domain'];
 
 				foreach ($package->pricing as $pricing) {
 					if ($pricing->id == $vars['pricing_id']) {
-						$vars['regperiod'] = $pricing->term . "Y";
+						$vars['period'] = $pricing->term . "Y";
 						break;
 					}
 				}
-				
-				// Handle transfer
-				if (isset($vars['transfer_key'])) {
-					//$vars['DomainCount'] = "1";
-					//$vars['UseContacts'] = "1";
-					$vars['domain'] = $vars['domain'];
-					$vars['transferAuthInfo'] = $vars['transfer_key'];
-					
-					$fields = array_intersect_key($vars, $input_fields);
-					
-					$command = new InternetbsAll($api);
-					$response = $command->Domain_Transfer_Initiate($fields);
-					$this->processResponse($api, $response);
-					
-					if ($this->Input->errors())
-						return;
-					
-					return array(array('key' => "domain", 'value' => $fields['domain'], 'encrypted' => 0));
-				}
-				// Handle registration
-				else {
 
 					// Set all whois info from client ($vars['client_id'])
 					if (!isset($this->Clients))
 						Loader::loadModels($this, array("Clients"));
 					if (!isset($this->Contacts))
 						Loader::loadModels($this, array("Contacts"));
-						
+
 					$client = $this->Clients->get($vars['client_id']);
 					$numbers = $this->Contacts->getNumbers($client->contact_id, "phone");
 
+                    $remove_chars = "º";
+
 					foreach ($whois_fields as $key => $value) {
 						if (strpos($key, "firstname") !== false)
-							$vars[$key] = $client->first_name;
+							$vars[$key] = str_replace($remove_chars, "", $client->first_name);
 						elseif (strpos($key, "lastname") !== false)
-							$vars[$key] = $client->last_name;
+							$vars[$key] = str_replace($remove_chars, "", $client->last_name);
 						elseif (strpos($key, "street3") !== false)
                             $vars[$key] = "";
 						elseif (strpos($key, "street2") !== false)
-							$vars[$key] = $client->address2;
+							$vars[$key] = str_replace($remove_chars, "", $client->address2);
 						elseif (strpos($key, "street") !== false)
-							$vars[$key] = $client->address1;
+							$vars[$key] = str_replace($remove_chars, "", $client->address1);
 						elseif (strpos($key, "city") !== false)
 							$vars[$key] = $client->city;
 						elseif (strpos($key, "postalcode") !== false)
@@ -269,28 +254,48 @@ class Internetbs extends Module {
 							$vars[$key] = $client->email;
 					}
 
-					//$vars['UseDNS'] = "default";
+				// Handle transfer
+				if (isset($vars['transfer_key'])) {
+					$vars['domain'] = $vars['domain'];
+					$vars['transferAuthInfo'] = $vars['transfer_key'];
+                    unset($vars["transfer_key"]);
+                    unset($vars["period"]);
+					$fields = array_intersect_key($vars, $input_fields);
+					
+					$command = new InternetbsAll($api);
+					$response = $command->Domain_Transfer_Initiate($fields);
+					$this->processResponse($api, $response);
+					if ($this->Input->errors())
+						return;
+					
+					return array(array('key' => "domain", 'value' => $fields['domain'], 'encrypted' => 0));
+				}
+				// Handle registration
+				else {
 
-                	$nslist = array ();
-					for ($i=1; $i<=5; $i++) {
-						if (!isset($vars["ns" . $i]) || $vars["ns" . $i] == "")
-							unset($vars["ns" . $i]);
-						else
-							//unset($vars['UseDNS']);
-                            array_push ($nslist,$vars["ns$i"]);
-					}
 
-                	// ns_list is optional
-                	if(count($nslist)) {
-                		$vars['ns_list'] = trim(implode(',',$nslist),",");
-                	}
+	$nslist = array ();
+	for($i = 1; $i <= 5; $i ++) {
+	  if(isset($vars["ns$i"])){
+		if (trim($vars["ns$i"]) != "") {
+			array_push ($nslist, $vars["ns$i"] );
+            unset($vars["ns$i"]);
+		}else{
+            unset($vars["ns$i"]);
+		}
+      }
+	}
+
+
 
 					$fields = array_intersect_key($vars, $input_fields);
+                    if (count($nslist)) {$fields['ns_list'] = implode(",",$nslist);}
 
 					$command = new InternetbsAll($api);
 					$response = $command->domain_create($fields);
+
 					$this->processResponse($api, $response);
-					
+
 					if ($this->Input->errors())
 						return;
 					
@@ -493,7 +498,7 @@ class Internetbs extends Module {
 			}
 		}
 		
-		return $meta;	
+		return $meta;
 	}
 	
 	/**
@@ -531,7 +536,7 @@ class Internetbs extends Module {
 		
 		// Load the helpers required for this view
 		Loader::loadHelpers($this, array("Form", "Html", "Widget"));
-		
+
 		// Set unspecified checkboxes
 		if (!empty($vars)) {
 			if (empty($vars['sandbox']))
@@ -539,7 +544,7 @@ class Internetbs extends Module {
 		}
 		
 		$this->view->set("vars", (object)$vars);
-		return $this->view->fetch();	
+		return $this->view->fetch();
 	}
 
 	/**
@@ -548,7 +553,7 @@ class Internetbs extends Module {
 	 * @param stdClass $module_row The stdClass representation of the existing module row
 	 * @param array $vars An array of post data submitted to or on the edit module row page (used to repopulate fields after an error)
 	 * @return string HTML content containing information to display when viewing the edit module row page
-	 */	
+	 */
 	public function manageEditRow($module_row, array &$vars) {
 		// Load the view into this object, so helpers can be automatically added to the view
 		$this->view = new View("edit_row", "default");
@@ -647,7 +652,7 @@ class Internetbs extends Module {
 		Loader::loadHelpers($this, array("Html"));
 		
 		$fields = new ModuleFields();
-		
+
 		$types = array(
 			'domain' => Language::_("Internetbs.package_fields.type_domain", true),
 			#
@@ -660,7 +665,7 @@ class Internetbs extends Module {
 		$type = $fields->label(Language::_("Internetbs.package_fields.type", true), "internetbs_type");
 		$type->attach($fields->fieldSelect("meta[type]", $types,
 			$this->Html->ifSet($vars->meta['type']), array('id'=>"internetbs_type")));
-		$fields->setField($type);	
+		$fields->setField($type);
 		
 		// Set all TLD checkboxes
         $tld_options = $fields->label(Language::_("Internetbs.package_fields.tld_options", true));
@@ -672,15 +677,15 @@ class Internetbs extends Module {
 			$tld_options->attach($fields->fieldCheckbox("meta[tlds][]", $tld, (isset($vars->meta['tlds']) && in_array($tld, $vars->meta['tlds'])), array('id' => "tld_" . $tld), $tld_label));
 		}
 		$fields->setField($tld_options);
-		
+
 		// Set nameservers
 		for ($i=1; $i<=5; $i++) {
 			$type = $fields->label(Language::_("Internetbs.package_fields.ns" . $i, true), "internetbs_ns" . $i);
 			$type->attach($fields->fieldText("meta[ns][]",
 				$this->Html->ifSet($vars->meta['ns'][$i-1]), array('id'=>"internetbs_ns" . $i)));
 			$fields->setField($type);
-		}	
-		
+		}
+
 		$fields->setHtml("
 			<script type=\"text/javascript\">
 				$(document).ready(function() {
@@ -760,7 +765,7 @@ class Internetbs extends Module {
 					if ($extension_fields)
 						$module_fields = $this->arrayToModuleFields($extension_fields, $module_fields, $vars);
 				}
-				
+
 				return $module_fields;
 			}
 		}
@@ -795,7 +800,7 @@ class Internetbs extends Module {
 			// Handle transfer request
 			if (isset($vars->transfer) || isset($vars->transfer_key)) {
 				$fields = Configure::get("Internetbs.transfer_fields");
-				
+
 				// We should already have the domain name don't make editable
 				$fields['domain']['type'] = "hidden";
 				$fields['domain']['label'] = null;
@@ -834,7 +839,7 @@ class Internetbs extends Module {
 	 * @param stdClass $package A stdClass object representing the selected package
 	 * @param $vars stdClass A stdClass object representing a set of post fields
 	 * @return ModuleFields A ModuleFields object, containg the fields to render as well as any additional HTML markup to include
-	 */	
+	 */
 	public function getAdminEditFields($package, $vars=null) {
 		if ($package->meta->type == "domain") {
 			return new ModuleFields();
@@ -880,6 +885,8 @@ class Internetbs extends Module {
 			return array(
 				'tabWhois' => Language::_("Internetbs.tab_whois.title", true),
 				'tabNameservers' => Language::_("Internetbs.tab_nameservers.title", true),
+				'tabDNS' => Language::_("Internetbs.tab_dns.title", true),
+				'tabEmailForwarding' => Language::_("Internetbs.tab_emailforwarding.title", true),
 				'tabSettings' => Language::_("Internetbs.tab_settings.title", true)
 			);
 		}
@@ -902,6 +909,8 @@ class Internetbs extends Module {
 			return array(
 				'tabClientWhois' => Language::_("Internetbs.tab_whois.title", true),
 				'tabClientNameservers' => Language::_("Internetbs.tab_nameservers.title", true),
+				'tabClientDNS' => Language::_("Internetbs.tab_dns.title", true),
+				'tabClientEmailForwarding' => Language::_("Internetbs.tab_emailforwarding.title", true),
 				'tabClientSettings' => Language::_("Internetbs.tab_settings.title", true)
 			);
 		}
@@ -939,7 +948,7 @@ class Internetbs extends Module {
 	public function tabClientWhois($package, $service, array $get=null, array $post=null, array $files=null) {
 		return $this->manageWhois("tab_client_whois", $package, $service, $get, $post, $files);
 	}
-	
+
 	/**
 	 * Admin Nameservers tab
 	 *
@@ -953,7 +962,7 @@ class Internetbs extends Module {
 	public function tabNameservers($package, $service, array $get=null, array $post=null, array $files=null) {
 		return $this->manageNameservers("tab_nameservers", $package, $service, $get, $post, $files);
 	}
-	
+
 	/**
 	 * Admin Nameservers tab
 	 *
@@ -966,6 +975,35 @@ class Internetbs extends Module {
 	 */
 	public function tabClientNameservers($package, $service, array $get=null, array $post=null, array $files=null) {
 		return $this->manageNameservers("tab_client_nameservers", $package, $service, $get, $post, $files);
+	}
+
+
+	/**
+	 * Admin Email Fowards tab
+	 *
+	 * @param stdClass $package A stdClass object representing the current package
+	 * @param stdClass $service A stdClass object representing the current service
+	 * @param array $get Any GET parameters
+	 * @param array $post Any POST parameters
+	 * @param array $files Any FILES parameters
+	 * @return string The string representing the contents of this tab
+	 */
+	public function tabEmailForwarding($package, $service, array $get=null, array $post=null, array $files=null) {
+		return $this->manageEmailForwarding("tab_emailforwarding", $package, $service, $get, $post, $files);
+	}
+
+	/**
+	 * Admin Email Fowards tab
+	 *
+	 * @param stdClass $package A stdClass object representing the current package
+	 * @param stdClass $service A stdClass object representing the current service
+	 * @param array $get Any GET parameters
+	 * @param array $post Any POST parameters
+	 * @param array $files Any FILES parameters
+	 * @return string The string representing the contents of this tab
+	 */
+	public function tabClientEmailForwarding($package, $service, array $get=null, array $post=null, array $files=null) {
+		return $this->manageEmailForwarding("tab_client_emailforwarding", $package, $service, $get, $post, $files);
 	}
 	
 	/**
@@ -1043,9 +1081,11 @@ class Internetbs extends Module {
 					if (isset($data->{$section})) {
 
 						foreach ($data->{$section} as $name => $value) {
-							$vars->{ucfirst($section)."_".$name} = $value;
+                          if (!is_string($value)){$value = "";}// check if its string
+						  $vars->{ucfirst($section)."_".$name} = $value;
 						}
 					}
+
 				}
 			}
 		}
@@ -1056,7 +1096,7 @@ class Internetbs extends Module {
 		$this->view->setDefaultView("components" . DS . "modules" . DS . "internetbs" . DS);
 		return $this->view->fetch();
 	}
-	
+
 	/**
 	 * 100% complete
 	 * Handle updating nameserver information
@@ -1070,17 +1110,17 @@ class Internetbs extends Module {
 	 * @return string The string representing the contents of this tab
 	 */
 	private function manageNameservers($view, $package, $service, array $get=null, array $post=null, array $files=null) {
-		
+
 		$this->view = new View($view, "default");
 		// Load the helpers required for this view
 		Loader::loadHelpers($this, array("Form", "Html"));
-		
+
 		$vars = new stdClass();
-		
+
 		$row = $this->getModuleRow($package->module_row);
 		$api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == "true");
 		$command = new InternetbsAll($api);
-		
+
 		$fields = $this->serviceFieldsToObject($service->fields);
 		
 		if (!empty($post)) {
@@ -1116,12 +1156,94 @@ class Internetbs extends Module {
 
 			}
 		}
-		
+
 		$this->view->set("vars", $vars);
 		$this->view->setDefaultView("components" . DS . "modules" . DS . "internetbs" . DS);
 		return $this->view->fetch();
 	}
-	
+
+	/**
+	 * 100% complete
+	 * Handle updating email fowarding information
+	 *
+	 * @param string $view The view to use
+	 * @param stdClass $package A stdClass object representing the current package
+	 * @param stdClass $service A stdClass object representing the current service
+	 * @param array $get Any GET parameters
+	 * @param array $post Any POST parameters
+	 * @param array $files Any FILES parameters
+	 * @return string The string representing the contents of this tab
+	 */
+	private function manageEmailForwarding($view, $package, $service, array $get=null, array $post=null, array $files=null) {
+
+		$this->view = new View($view, "default");
+		// Load the helpers required for this view
+		Loader::loadHelpers($this, array("Form", "Html"));
+
+		$vars = new stdClass();
+
+		$row = $this->getModuleRow($package->module_row);
+		$api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == "true");
+		$command = new InternetbsAll($api);
+
+		$fields = $this->serviceFieldsToObject($service->fields);
+
+		if (!empty($post)) {
+			$vars = $post;
+
+    	foreach ($vars['efsourceh'] as $i => $efsourceh) {
+            if (!empty($vars['efsourceh'][$i])){
+    		$sourceh = $vars['efsourceh'][$i] . "@" . $fields->domain;
+    		$sourceh = urlencode ($sourceh);
+    		$command->Domain_EmailForward_Remove(array('source' => $sourceh));
+            }
+      	}
+
+    	foreach ($vars['efsource'] as $i => $efsource) {
+            if (!empty($vars['efsource'][$i])){
+           		$source = $vars['efsource'][$i] . "@" . $fields->domain;
+           		$source = urlencode (trim($source));
+                $destination = urlencode(trim($vars['efdestination'][$i]));
+    		 	$response = $command->Domain_EmailForward_Add(array('source' => $source, 'destination' => $destination));
+                $this->processResponse($api, $response);
+            }
+
+      	}
+			unset($vars['efsourceh']);
+			unset($vars['efsource']);
+			unset($vars['efdestination']);
+			unset($vars['domain']);
+			$vars = (object)$post;
+
+		}
+		else {
+			$response = $command->Domain_EmailForward_List(array('domain' => $fields->domain));
+			$this->processResponse($api, $response);
+
+			if ($response->status() != "FAILURE") {
+				$data = $response->response();
+                    // get email rules/fowards
+                    if($data->total_rules > 0) {
+        				foreach ($data->rule as $efsource){
+        				  if(!empty($efsource->source)){
+		    			   	$vars->efsource[] = substr($efsource->source, 0, strpos($efsource->source, '@'));
+                            $vars->efdestination[] = $efsource->destination;
+                          }else{
+                            $vars->efsource[0] = substr($data->rule->source, 0, strpos($data->rule->source, '@'));
+                            $vars->efdestination[0] = $data->rule->destination;
+                          }
+                        }
+                    }
+
+			}
+        $vars->domain = $fields->domain;
+		}
+		$this->view->set("vars", $vars);
+		$this->view->setDefaultView("components" . DS . "modules" . DS . "internetbs" . DS);
+		return $this->view->fetch();
+	}
+
+
 	/**
 	 * 100% complete
 	 * Handle updating settings
@@ -1295,14 +1417,14 @@ class Internetbs extends Module {
 	 */
 	private function processResponse(InternetbsApi $api, InternetbsResponse $response) {
 		$this->logRequest($api, $response);
-		
+
 		// Set errors, if any
 		if ($response->status() != "SUCCESS") {
 			$errors = $response->errors() ? $response->errors() : array();
 			$this->Input->setErrors(array('errors' => $errors));
 		}
 	}
-	
+
 	/**
 	 * 100% completed
 	 * Logs the API request

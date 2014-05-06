@@ -49,6 +49,7 @@ class InternetbsResponse {
 	 */
 	public function status() {
 		if ($this->xml && $this->xml instanceof SimpleXMLElement) {
+          $ncode = "";
 			if (isset($this->xml->status))
                 $ncode = $this->xml->status;
 
@@ -56,7 +57,8 @@ class InternetbsResponse {
 		}
 		return null;
 	}
-	
+
+
 	/**
 	 * Returns all errors contained in the response
 	 *
@@ -64,10 +66,11 @@ class InternetbsResponse {
 	 */
 	public function errors() {
 		if ($this->xml && $this->xml instanceof SimpleXMLElement && $this->xml->code > 0) {
-			$errors = array();
-			for ($i=1; $i<=$this->xml->code; $i++) {
-				$errors[] = (string)$this->xml->errors->{"Err" . $i};
-			}
+			//$errors = array();
+		   //	for ($i=1; $i<=$this->xml->code; $i++) {
+			 //	$errors[] = (string)$this->xml->errors->{"Err" . $i};
+            $errors = $this->xml->message;
+           //}
 			return $this->formatResponse($errors);
 		}
 		return false;

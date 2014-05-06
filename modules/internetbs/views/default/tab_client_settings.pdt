@@ -2,35 +2,42 @@
 	<?php
 	$this->Form->create();
 	?>
-	<div class="pad">
-		<ul>
-			<li>
-        		<div class="title_row first">
-        			<h3><?php $this->_("Internetbs.tab_settings.field_registrar_lock");?></h3>
-        		</div>
+	<div class="row panel-fix">
+		<div class="col-md-12">
+        			<h4><?php $this->_("Internetbs.tab_settings.field_registrar_lock");?></h4>
+			<div class="form-group">
+				<div class="radio">
+					<label>
                 <?php
 				$this->Form->fieldRadio("registrar_lock", "true", $this->Html->ifSet($vars->registrar_lock) == "true", array('id' => "registrar_lock_yes"));
 				$this->Form->label($this->_("Internetbs.tab_settings.field_registrar_lock_yes", true), "registrar_lock_yes", array('class' => "inline"));
-                ?><br><br><?php
+                ?>
+					</label>
+				</div>
+				<div class="radio">
+					<label>
+                <?php
 				$this->Form->fieldRadio("registrar_lock", "false", $this->Html->ifSet($vars->registrar_lock) == "false", array('id' => "registrar_lock_no"));
 				$this->Form->label($this->_("Internetbs.tab_settings.field_registrar_lock_no", true), "registrar_lock_no", array('class' => "inline"));
 				?>
-			</li>
-			<li>
-        		<div class="title_row first">
-        			<h3><?php $this->_("Internetbs.tab_settings.field_request_epp");?></h3>
-        		</div>
-                <?php
-				$this->Form->label($vars->epp_key, "request_epp");
-				?>
-			</li>
-		</ul>
-	</div>
-	<div class="button_row">
-		<div class="btn submit right_btn">
-			<a class="submit" href="#"><?php $this->_("Internetbs.tab_settings.field_submit");?></a>
+					</label>
+				</div>
+			</div>
+			<div class="form-group">
+				<div>
+					<label>
+        			<?php $this->_("Internetbs.tab_settings.field_request_epp");?>:
+                    <?php
+        				$this->Form->label($vars->epp_key, "request_epp");
+		    		?>
+					</label>
+				</div>
+			</div>
 		</div>
 	</div>
+	<button class="btn btn-default pull-right" type="submit">
+		<i class="fa fa-edit"></i> <?php $this->_("Internetbs.tab_settings.field_submit");?>
+	</button>
 	<?php
 	$this->Form->end();
 	?>

@@ -1,0 +1,89 @@
+	<?php
+	$this->Form->create();
+	?>
+
+			<div class="row panel-fix">
+				<div class="col-md-12">
+					<h4><?php $this->_("ClientContacts.phone_numbers.heading_phone");?></h4>
+					<div class="table-responsive">
+						<table class="table table-curved table-striped">
+							<thead>
+								<tr>
+									<th><?php $this->_("Internetbs.tab_emailforwardingver.field_source");?></th>
+									<th>&nbsp;</th>
+									<th><?php $this->_("Internetbs.tab_emailforwardingver.field_destination"); ?></th>
+									<th>&nbsp;</th>
+								</tr>
+							</thead>
+							<tbody>
+						<?php
+						$num_efowards = count($this->Html->ifSet($vars->efdestination));
+						for ($i=0; $i<max(1,$num_efowards); $i++) {
+						?>
+						<tr class="ef_row">
+                          <td><?php $this->Form->fieldText("efsource[]", $this->Html->ifSet($vars->efsource[$i]), array('id' => "efsource" . $i+1, 'class'=>"form-control input-sm", 'placeholder'=>$this->_("Internetbs.tab_emailforwardingver.field_source", true)));?></td>
+                          <td><div class="form-group">@<?php echo $this->Html->ifSet($vars->domain); ?> =></div></td>
+                          <td><?php $this->Form->fieldText("efdestination[]", $this->Html->ifSet($vars->efdestination[$i]), array('id' => "efdestination" . $i+1, 'class'=>"form-control input-sm", 'placeholder'=>$this->_("Internetbs.tab_emailforwardingver.field_destination", true)));?></td>
+									<td>
+										<div class="btn-group">
+											<button type="button" class="btn btn-sm btn-default ef_row_add"><i class="fa fa-plus fa-fw"></i> <?php $this->_("Internetbs.add_more_row");?></button>
+											<button type="button" class="btn btn-sm btn-default dropdown-toggle" data-toggle="dropdown">
+												<span class="caret"></span>
+												<?php
+												#
+												# TODO: the sr-only "Toggle Dropdown" should be an AppController or global language file term
+												#
+												?>
+												<span class="sr-only">Toggle Dropdown</span>
+											</button>
+											<ul class="dropdown-menu" role="menu">
+												<li><a href="#" class="ef_row_remove"><i class="fa fa-ban fa-fw"></i> <?php $this->_("Internetbs.remove_row");?></a></li>
+											</ul>
+										</div>
+									</td>
+						</tr>
+                        <?php $this->Form->fieldHidden("efsourceh[]", $this->Html->ifSet($vars->efsource[$i]), array('id' => "efsourceh" . $i+1)); ?>
+						<?php
+						}
+						?>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+	<button class="btn btn-default pull-right" type="submit">
+		<i class="fa fa-edit"></i> <?php $this->_("Internetbs.tab_emailforwarding.field_submit");?>
+	</button>
+
+	<?php
+	$this->Form->end();
+	?>
+<script type="text/javascript">
+$(document).ready(function() {
+	// Add a row
+	$('.ef_row_add').click(function() {
+        var fields = $(this).parents('tr').clone(true);
+		// Remove input text/hidden and textarea data
+		fields.find('input:text,input:hidden,textarea').val('');
+
+		var last_tr = $(this).parents('tr').last();
+		$(last_tr).after(fields);
+
+		return false;
+	});
+	// Remove a row
+	$('.ef_row_remove').click(function() {
+		if ($('tr.ef_row').length > 1) {
+			$(this).closest('tr').remove();
+			// Reorder the counts for these rows
+			$i=1;
+			$('tr.ef_row').each(function() {
+				$('td:first span', this).text($i++);
+			});
+		}
+		updateNsRows();
+		return false;
+	});
+});
+
+</script>
