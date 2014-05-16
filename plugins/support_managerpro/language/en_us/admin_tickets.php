@@ -2,6 +2,11 @@
 // Success messages
 $lang['AdminTickets.!success.ticket_created'] = "The ticket #%1\$s has been successfully opened."; // %1$s is the ticket number
 $lang['AdminTickets.!success.ticket_updated'] = "The ticket #%1\$s has been successfully updated."; // %1$s is the ticket number
+$lang['AdminTickets.!success.ticket_split'] = "The ticket #%1\$s has been successfully split into ticket #%2\$s."; // %1$s is the ticket number of the ticket being split, %2$s is the ticket number of the split ticket
+$lang['AdminTickets.!success.ticket_merge'] = "The selected tickets have been successfully merged."; // %1$s is the ticket number
+$lang['AdminTickets.!success.ticket_update_status'] = "The selected tickets have been successfully updated.";
+$lang['AdminTickets.!success.ticket_deleted'] = "The selected tickets have been successfully deleted.";
+$lang['AdminTickets.!success.reply_deleted'] = "The selected replies have been successfully deleted.";
 
 
 // Notice messages
@@ -18,44 +23,44 @@ $lang['AdminTickets.search.page_title'] = "Search Results for \"%1\$s\""; // %1$
 $lang['AdminTickets.text.unassigned'] = "Not Assigned";
 
 
+
 // Index
 $lang['AdminTickets.index.category_open'] = "Open";
 $lang['AdminTickets.index.category_awaiting_reply'] = "Awaiting Reply";
 $lang['AdminTickets.index.category_in_progress'] = "In Progress";
 $lang['AdminTickets.index.category_closed'] = "Closed";
-$lang['AdminTickets.index.add_client'] = "Add as Client";
-$lang['AdminTickets.index.quote'] = "Quote";
-$lang['AdminTickets.index.del_reply'] = "Delete Reply";
-$lang['AdminTickets.index.submiter'] = "Submiter";
-$lang['AdminTickets.index.staff'] = "staff";
-$lang['AdminTickets.index.is_client'] = "client";
-$lang['AdminTickets.index.not_client'] = "not client";
 $lang['AdminTickets.index.category_spam'] = "Spam";
-$lang['AdminTickets.index.category_deleted'] = "Deleted";
-$lang['AdminTickets.index.categorylink_close'] = "Close";
-$lang['AdminTickets.index.categorylink_close_confirm'] = "Are you sure you wish to CLOSE the selected ticket(s)?";
-$lang['AdminTickets.index.categorylink_spam'] = "Add to Spam";
-$lang['AdminTickets.index.categorylink_spam_confirm'] = "Are you sure you wish to add to SPAM the selected ticket(s)?";
-$lang['AdminTickets.index.categorylink_deleted'] = "Add to Delete";
-$lang['AdminTickets.index.categorylink_deleted_confirm'] = "Are you sure you wish to DELETE the selected ticket(s)?";
-$lang['AdminTickets.index.categorylink_merge'] = "Merge Tickets";
-$lang['AdminTickets.index.categorylink_merge_confirm'] = "Are you sure you wish to MERGE the selected ticket(s)?";
-$lang['AdminTickets.index.categorylink_purge'] = "Permanent Delete";
-$lang['AdminTickets.index.categorylink_purge_confirm'] = "Are you sure you wish to Permanent Delete the selected ticket(s)?";
-$lang['AdminTickets.index.categorylink_delete_reply_confirm'] = "Are you sure you wish to Permanent Delete this REPLY?";
+$lang['AdminTickets.index.category_deleted'] = "Delete";
+$lang['AdminTickets.index.category_pdelete'] = "Permanent Delete";
 
 $lang['AdminTickets.index.categorylink_createticket'] = "Open Ticket";
+
+$lang['AdminTickets.index.add_client'] = "Add Client";
+$lang['AdminTickets.index.quote'] = "Quote";
 
 $lang['AdminTickets.index.boxtitle_tickets'] = "Tickets";
 $lang['AdminTickets.index.heading_code'] = "Ticket Number";
 $lang['AdminTickets.index.heading_priority'] = "Priority";
 $lang['AdminTickets.index.heading_department_name'] = "Department";
 $lang['AdminTickets.index.heading_summary'] = "Summary";
+$lang['AdminTickets.index.heading_from'] = "From/To";
+$lang['AdminTickets.index.heading_assigned_staff'] = "Assigned To";
 $lang['AdminTickets.index.heading_last_reply_date'] = "Last Reply";
 
+$lang['AdminTickets.index.unassigned'] = "Unassigned";
 $lang['AdminTickets.index.last_reply_by'] = "by";
 
 $lang['AdminTickets.index.no_results'] = "There are currently no tickets with this status.";
+
+$lang['AdminTickets.index.text_with_selected'] = "With selected tickets, perform:";
+$lang['AdminTickets.index.text_into_ticket'] = "Into ticket:";
+$lang['AdminTickets.index.text_to_status'] = "Change to:";
+$lang['AdminTickets.index.ticket_number_placeholder'] = "Ticket Number";
+$lang['AdminTickets.index.text_no_tickets'] = "No open tickets found. Try searching again.";
+$lang['AdminTickets.index.field_actionsubmit'] = "Submit";
+
+$lang['AdminTickets.index.ticket_name'] = "#%1\$s %2\$s %3\$s"; // %1$s is the ticket number, %2$s is the client's first name, %3$s is the client's last name
+$lang['AdminTickets.index.ticket_email'] = "#%1\$s %2\$s"; // %1$s is the ticket number, %2$s is the client's email address
 
 
 // Add Ticket
@@ -92,6 +97,7 @@ $lang['AdminTickets.reply.heading_status'] = "Status";
 $lang['AdminTickets.reply.heading_date_added'] = "Date Opened";
 
 $lang['AdminTickets.reply.text_add_response'] = "Insert a Predefined Response";
+$lang['AdminTickets.reply.text_with_selected'] = "With selected replies, perform:";
 
 $lang['AdminTickets.reply.heading_reply'] = "Add Reply";
 $lang['AdminTickets.reply.field_reply'] = "Reply";
@@ -99,6 +105,7 @@ $lang['AdminTickets.reply.field_note'] = "Note";
 $lang['AdminTickets.reply.field_attachments'] = "Attachments";
 $lang['AdminTickets.reply.text_add_attachment'] = "Add Attachment";
 $lang['AdminTickets.reply.field_replysubmit'] = "Update Ticket";
+$lang['AdminTickets.reply.field_actionsubmit'] = "Go";
 
 $lang['AdminTickets.reply.reply_date'] = "On %1\$s %2\$s %3\$s replied"; // %1$s is the ticket reply date, %2$s is the first name of the reply author, %3$s is the last name of the reply author
 $lang['AdminTickets.reply.log_date'] = "%1\$s by %2\$s %3\$s"; // %1$s is the ticket reply date, %2$s is the first name of the reply author, %3$s is the last name of the reply author
@@ -112,8 +119,6 @@ $lang['AdminTickets.client.category_open'] = "Open";
 $lang['AdminTickets.client.category_awaiting_reply'] = "Awaiting Reply";
 $lang['AdminTickets.client.category_in_progress'] = "In Progress";
 $lang['AdminTickets.client.category_closed'] = "Closed";
-$lang['AdminTickets.client.category_spam'] = "Spam";
-$lang['AdminTickets.client.category_deleted'] = "Deleted";
 
 $lang['AdminTickets.client.categorylink_createticket'] = "Open Ticket";
 

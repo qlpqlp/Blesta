@@ -3,6 +3,7 @@
 				echo $this->Html->ifSet($message);
 				
 				$this->Widget->clear();
+				$this->Widget->setStyleSheet($this->view_dir . "css/styles.css", array('id' => "support_managerpro_styles"));
 				$this->Widget->create($this->_("AdminDepartments.add.boxtitle_adddepartment", true));
 				?>
 				<div class="inner">
@@ -107,6 +108,38 @@
 						<ul>
 							<li>
 								<?php
+								$this->Form->label($this->_("AdminDepartments.add.field_close_ticket_interval", true), "close_ticket_interval");
+								$this->Form->fieldSelect("close_ticket_interval", $this->Html->ifSet($close_ticket_intervals, array()), $this->Html->ifSet($vars->close_ticket_interval), array('id' => "close_ticket_interval"));
+								?>
+								<span class="tooltip"><?php $this->_("AppController.tooltip.text");?><div><?php $this->_("AdminDepartments.!tooltip.close_ticket_interval", false, $this->Html->ifSet($ticket_statuses['in_progress']));?></div></span>
+							</li>
+							<li>
+								<?php
+								$this->Form->label($this->_("AdminDepartments.add.field_response_id", true), "response_id");
+								$this->Form->fieldHidden("response_id", $this->Html->ifSet($vars->response_id), array('id'=>"response_id"));
+								?>
+								<div class="box_left">
+									<div id="selected_response"><?php $this->Html->_($response->name);?></div>
+								</div>
+								<div class="box_left" id="remove_response">
+									&nbsp; <a href="#" class="remove_link"><?php $this->_("AdminDepartments.!text.remove_response");?></a>
+								</div>
+								<div class="clear"></div>
+								<div id="no_selected_response" style="display:none;">
+									<em><?php $this->_("AdminDepartments.!text.no_selected_response");?></em>
+								</div>
+								<h4><a id="add_predefined_response" class="show_content" href="#"><?php $this->_("AdminDepartments.!text.add_response");?></a></h4>
+							</li>
+						</ul>
+					</div>
+					<div id="predefined_responses" style="display:none;">
+						<?php echo $this->Html->ifSet($predefined_responses);?>
+					</div>
+					<div class="clear"></div>
+					<div class="pad">
+						<ul>
+							<li>
+								<?php
 								$this->Form->label($this->_("AdminDepartments.add.field_status", true), "status");
 								$this->Form->fieldSelect("status", $this->Html->ifSet($statuses), $this->Html->ifSet($vars->status), array('id' => "status"));
 								?>
@@ -122,6 +155,11 @@
 <?php
 $this->Javascript->setInline("
 $(document).ready(function() {
+	if ($('#selected_response').text() == '') {
+		$('#no_selected_response').show();
+		$('#remove_response').hide();
+	}
+	
 	showPop3Fields();
 	$('#method').change(function() {
 		showPop3Fields();
@@ -130,6 +168,38 @@ $(document).ready(function() {
 	// Select piping command
 	$('#piping_config').focusin(function() {
 		$(this).select();
+	});
+	
+	// Toggle predefined responses
+	$(this).blestaBindToggleEvent('#add_predefined_response', '#predefined_responses');
+	$('#add_predefined_response').click(function() {
+		if ($(this).hasClass('show_content')) {
+			setPredefinedResponses(null);
+		}
+	});
+	
+	// Switch between response categories
+	$('#responses .category a.text_link, #responses .up_level a.text_link').live('click', function() {
+		var match = $(this).attr('id').match(/(\d+)$/);
+		var cat_id = match ? parseInt(match[0], 10) : null;
+		setPredefinedResponses(cat_id);
+		return false;
+	});
+	
+	// Add the predefined response
+	$('#responses .response_item a.text_link').live('click', function() {
+		var match = $(this).attr('id').match(/(\d+)$/);
+		var response_id = match ? parseInt(match[0], 10) : null;
+		setPredefinedResponse(response_id);
+		return false;
+	});
+	
+	$('#remove_response').click(function() {
+		$('#remove_response').hide();
+		$('#no_selected_response').show();
+		$('#selected_response').text('');
+		$('#response_id').val('');
+		return false;
 	});
 });
 
@@ -144,6 +214,33 @@ function showPop3Fields() {
 	else
 		$('#piping').hide();
 	return false;
+}
+
+function setPredefinedResponse(response_id) {
+	$(document).blestaRequest('GET', '" . $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_departments/getresponse/") . "' + response_id, {},
+		function(data) {
+			if (data) {
+				$('#response_id').val(data.id);
+				$('#selected_response').text(data.name);
+				$('#no_selected_response').hide();
+				$('#remove_response').show();
+			}
+		},
+		null,
+		{dataType:'json'}
+	);
+}
+
+function setPredefinedResponses(category_id) {
+	$(document).blestaRequest('GET', '" . $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_departments/getresponselisting/") . "' + category_id, {},
+		function(data) {
+			if (data) {
+				$('#predefined_responses').html(data);
+			}
+		},
+		null,
+		{dataType:'json'}
+	);
 }
 ");
 ?>

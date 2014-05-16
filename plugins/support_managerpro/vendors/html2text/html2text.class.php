@@ -114,6 +114,7 @@ class html2text
      *  @access public
      */
     var $html;
+
     /**
      *  Contains the converted, formatted text.
      *
@@ -143,7 +144,7 @@ class html2text
      */
     var $search = array(
         "/\r/",                                  // Non-legal carriage return
-        "/[\t]+/",                               // Tabs
+        "/[\n\t]+/",                             // Newlines and tabs
         '/[ ]{2,}/',                             // Runs of spaces, pre-handling
         '/<script[^>]*>.*?<\/script>/i',         // <script>s -- which strip_tags supposedly has problems with
         '/<style[^>]*>.*?<\/style>/i',           // <style>s -- which strip_tags supposedly has problems with
@@ -183,7 +184,7 @@ class html2text
         //'/&(bull|#149|#8226);/i',                // Bullet
         //'/&(pound|#163);/i',                     // Pound sign
         //'/&(euro|#8364);/i',                     // Euro sign
-        //'/&[^&;]+;/i',                             // Unknown/unhandled entities
+        //'/&[^&;]+;/i',                           // Unknown/unhandled entities
         '/[ ]{2,}/'                              // Runs of spaces, post-handling
     );
 
@@ -196,7 +197,7 @@ class html2text
      */
     var $replace = array(
         '',                                     // Non-legal carriage return
-        ' ',                                    // Tabs
+        ' ',                                    // Newlines and tabs
         ' ',                                    // Runs of spaces, pre-handling
         '',                                     // <script>s -- which strip_tags supposedly has problems with
         '',                                     // <style>s -- which strip_tags supposedly has problems with

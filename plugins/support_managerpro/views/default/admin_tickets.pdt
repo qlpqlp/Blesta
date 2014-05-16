@@ -1,39 +1,38 @@
 		<?php
 		echo $this->Html->ifSet($message);
-
+		
 		$links = array(
-			array('name'=>"<span " . ($status == "open" ? 'class=status_selected' : '') . " >" . $this->_("AdminTickets.index.category_open", true) . " (" . $this->Html->_($status_count['open'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "open" ? true : false), 'attributes'=>array('href'=>$this->base_uri . "plugin/support_managerpro/admin_tickets/index/open/", 'class'=>"ajax")),
-			array('name'=>"<span " . ($status == "awaiting_reply" ? 'class=status_selected' : '') . " >" . $this->_("AdminTickets.index.category_awaiting_reply", true) . " (" . $this->Html->_($status_count['awaiting_reply'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "awaiting_reply" ? true : false), 'attributes'=>array('href'=>$this->base_uri . "plugin/support_managerpro/admin_tickets/index/awaiting_reply/", 'class'=>"ajax")),
-			array('name'=>"<span " . ($status == "in_progress" ? 'class=status_selected' : '') . " >" . $this->_("AdminTickets.index.category_in_progress", true) . " (" . $this->Html->_($status_count['in_progress'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "in_progress" ? true : false), 'attributes'=>array('href'=>$this->base_uri . "plugin/support_managerpro/admin_tickets/index/in_progress/", 'class'=>"ajax")),
-			array('name'=>"<span " . ($status == "closed" ? 'class=status_selected' : '') . " >" . $this->_("AdminTickets.index.category_closed", true) . " (" . $this->Html->_($status_count['closed'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "closed" ? true : false), 'attributes'=>array('href'=>$this->base_uri . "plugin/support_managerpro/admin_tickets/index/closed/", 'class'=>"ajax")),
-			array('name'=>"<span " . ($status == "spam" ? 'class=status_selected' : '') . " >" . $this->_("AdminTickets.index.category_spam", true) . " (" . $this->Html->_($status_count['spam'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "spam" ? true : false), 'attributes'=>array('href'=>$this->base_uri . "plugin/support_managerpro/admin_tickets/index/spam/", 'class'=>"ajax")),
-			array('name'=>"<span " . ($status == "deleted" ? 'class=status_selected' : '') . " >" . $this->_("AdminTickets.index.category_deleted", true) . " (" . $this->Html->_($status_count['deleted'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "deleted" ? true : false), 'attributes'=>array('href'=>$this->base_uri . "plugin/support_managerpro/admin_tickets/index/deleted/", 'class'=>"ajax"))
+			array('name'=>"<span " . ($status == "open" ? 'class=label-selected' : '') . " >" . $this->_("AdminTickets.index.category_open", true) . " (" . $this->Html->_($status_count['open'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "open" ? true : false), 'attributes'=>array('href'=>$this->base_uri . "plugin/support_managerpro/admin_tickets/index/open/", 'class'=>"ajax")),
+			array('name'=>"<span " . ($status == "awaiting_reply" ? 'class=label-selected' : '') . " >" . $this->_("AdminTickets.index.category_awaiting_reply", true) . " (" . $this->Html->_($status_count['awaiting_reply'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "awaiting_reply" ? true : false), 'attributes'=>array('href'=>$this->base_uri . "plugin/support_managerpro/admin_tickets/index/awaiting_reply/", 'class'=>"ajax")),
+			array('name'=>"<span " . ($status == "in_progress" ? 'class=label-selected' : '') . " >" . $this->_("AdminTickets.index.category_in_progress", true) . " (" . $this->Html->_($status_count['in_progress'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "in_progress" ? true : false), 'attributes'=>array('href'=>$this->base_uri . "plugin/support_managerpro/admin_tickets/index/in_progress/", 'class'=>"ajax")),
+			array('name'=>"<span " . ($status == "closed" ? 'class=label-selected' : '') . " >" . $this->_("AdminTickets.index.category_closed", true) . " (" . $this->Html->_($status_count['closed'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "closed" ? true : false), 'attributes'=>array('href'=>$this->base_uri . "plugin/support_managerpro/admin_tickets/index/closed/", 'class'=>"ajax")),
+			array('name'=>"<span " . ($status == "spam" ? 'class=label-selected' : '') . " >" . $this->_("AdminTickets.index.category_spam", true) . " (" . $this->Html->_($status_count['spam'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "spam" ? true : false), 'attributes'=>array('href'=>$this->base_uri . "plugin/support_managerpro/admin_tickets/index/spam/", 'class'=>"ajax")),
+			array('name'=>"<span " . ($status == "deleted" ? 'class=label-selected' : '') . " >" . $this->_("AdminTickets.index.category_deleted", true) . " (" . $this->Html->_($status_count['deleted'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "deleted" ? true : false), 'attributes'=>array('href'=>$this->base_uri . "plugin/support_managerpro/admin_tickets/index/deleted/", 'class'=>"ajax"))
 		);
-
 		$link_buttons = array(
 			array('name'=>$this->_("AdminTickets.index.categorylink_createticket", true), 'attributes'=>array("href"=>$this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/add/")))
 		);
-
+		
 		$this->Widget->clear();
+		$this->Widget->setStyleSheet($this->view_dir . "css/styles.css", array('id' => "support_managerpro_styles"));
 		$this->Widget->setLinks($links);
 		$this->Widget->setLinkButtons($link_buttons);
 		$this->Widget->setWidgetButton("full_screen");
-		$this->Widget->setStyleSheet($this->view_dir . "css/styles.css", array('id' => "support_managerpro_styles"));
-		$this->Widget->create($this->_("AdminTickets.index.boxtitle_tickets", true), array('id'=>"admin_tickets", 'class'=>"ajax"), $this->Html->ifSet($render_section, null));
-
-		$this->Form->create(null, array('id' => "multiactions", 'enctype' => "multipart/form-data"));
-
+		$this->Widget->create($this->_("AdminTickets.index.boxtitle_tickets", true), array('id'=>"admin_tickets"), $this->Html->ifSet($render_section, null));
+		$this->Form->create($this->base_uri . "plugin/support_managerpro/admin_tickets/action/", array('id' => "tickets"));
+		
 		if ($this->Html->ifSet($tickets, false) && ($num_tickets = count($tickets)) > 0) {
 		?>
 		<table class="table" id="tickets">
-  			<tr class="heading_row">
-				<td style="width:20px"><?php echo($this->Form->fieldCheckbox("checkall","-",false,array('id' => "checkall")));?></td>
-				<td style="width: 85px"><span><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/index/" . $this->Html->ifSet($status) . "/?sort=code&order=" . ($sort == "code" ? $negate_order : $order));?>" class="ajax<?php echo $this->Html->safe($sort == "code" ? " " . $order : "");?>"><?php $this->_("AdminTickets.index.heading_code");?></a></span></td>
-				<td style="width: 30px"><span><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/index/" . $this->Html->ifSet($status) . "/?sort=priority&order=" . ($sort == "priority" ? $negate_order : $order));?>" class="ajax<?php echo $this->Html->safe($sort == "priority" ? " " . $order : "");?>"><?php $this->_("AdminTickets.index.heading_priority");?></a></span></td>
-				<td style="width: 120px"><span><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/index/" . $this->Html->ifSet($status) . "/?sort=department_name&order=" . ($sort == "department_name" ? $negate_order : $order));?>" class="ajax<?php echo $this->Html->safe($sort == "department_name" ? " " . $order : "");?>"><?php $this->_("AdminTickets.index.heading_department_name");?></a></span></td>
+			<tr class="heading_row">
+				<td><?php $this->Form->fieldCheckbox("select_tickets[]", "all", false, array('id' => "tickets_all", 'class' => "tickets"));?></td>
+				<td><span><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/index/" . $this->Html->ifSet($status) . "/?sort=code&order=" . ($sort == "code" ? $negate_order : $order));?>" class="ajax<?php echo $this->Html->safe($sort == "code" ? " " . $order : "");?>"><?php $this->_("AdminTickets.index.heading_code");?></a></span></td>
+				<td><span><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/index/" . $this->Html->ifSet($status) . "/?sort=priority&order=" . ($sort == "priority" ? $negate_order : $order));?>" class="ajax<?php echo $this->Html->safe($sort == "priority" ? " " . $order : "");?>"><?php $this->_("AdminTickets.index.heading_priority");?></a></span></td>
+				<td><span><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/index/" . $this->Html->ifSet($status) . "/?sort=department_name&order=" . ($sort == "department_name" ? $negate_order : $order));?>" class="ajax<?php echo $this->Html->safe($sort == "department_name" ? " " . $order : "");?>"><?php $this->_("AdminTickets.index.heading_department_name");?></a></span></td>
 				<td><?php $this->_("AdminTickets.index.heading_summary");?></td>
-   				<td style="width: 300px"><?php $this->_("AdminTickets.index.submiter");?></td>
-				<td class="last" style="width: 110px"><span><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/index/" . $this->Html->ifSet($status) . "/?sort=last_reply_date&order=" . ($sort == "last_reply_date" ? $negate_order : $order));?>" class="ajax<?php echo $this->Html->safe($sort == "last_reply_date" ? " " . $order : "");?>"><?php $this->_("AdminTickets.index.heading_last_reply_date");?></a></span></td>
+				<td><?php $this->_("AdminTickets.index.heading_from");?></td>
+                <td><span><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/index/" . $this->Html->ifSet($status) . "/?sort=assigned_staff_first_name&order=" . ($sort == "assigned_staff_first_name" ? $negate_order : $order));?>" class="ajax<?php echo $this->Html->safe($sort == "assigned_staff_first_name" ? " " . $order : "");?>"><?php $this->_("AdminTickets.index.heading_assigned_staff");?></a></span></td>
+				<td class="last"><span><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/index/" . $this->Html->ifSet($status) . "/?sort=last_reply_date&order=" . ($sort == "last_reply_date" ? $negate_order : $order));?>" class="ajax<?php echo $this->Html->safe($sort == "last_reply_date" ? " " . $order : "");?>"><?php $this->_("AdminTickets.index.heading_last_reply_date");?></a></span></td>
 			</tr>
 			<?php
 			// Display all tickets
@@ -44,27 +43,55 @@
 				$tr_class = $this->Html->concat(" ", ($highlight ? "highlight" : ""), ($odd_row ? "odd_row" : ""));
 			?>
 			<tr<?php echo (!empty($tr_class) ? " class=\"" . $tr_class . "\"" : "");?>>
-
-				<td><?php echo($this->Form->fieldCheckbox("selectedtickets[]",$this->Html->ifSet($ticket->id),false,array('id' => "checkitall")));?></td>
-
+				<td><?php $this->Form->fieldCheckbox("tickets[]", $this->Html->ifSet($ticket->id), false, array('class' => "tickets"));?></td>
 				<td><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/reply/" . $this->Html->ifSet($ticket->id) . "/");?>"><?php $this->Html->_($ticket->code);?></a></td>
-                <?php if ($ticket->priority == "low"){$priorities_color = "priority_low"; }?>
-                <?php if ($ticket->priority == "medium"){$priorities_color = "priority_medium"; }?>
-                <?php if ($ticket->priority == "high"){$priorities_color = "priority_high"; }?>
-                <?php if ($ticket->priority == "critical"){$priorities_color = "priority_critical"; }?>
-                <?php if ($ticket->priority == "emergency"){$priorities_color = "priority_emergency"; }?>
-				<td><span class='<?php echo $priorities_color; ?>'><?php echo $this->Html->ifSet($priorities[$ticket->priority]);?></span></td>
+                <?php if ($ticket->priority == "low"){$priorities_color = "label-low"; }?>
+                <?php if ($ticket->priority == "medium"){$priorities_color = "label-medium"; }?>
+                <?php if ($ticket->priority == "high"){$priorities_color = "label-high"; }?>
+                <?php if ($ticket->priority == "critical"){$priorities_color = "label-critical"; }?>
+                <?php if ($ticket->priority == "emergency"){$priorities_color = "label-emergency"; }?>
+				<td><span class='label <?php echo $priorities_color; ?>'><?php echo $this->Html->ifSet($priorities[$ticket->priority]);?></span></td>
 				<td><?php $this->Html->_($ticket->department_name);?></td>
-				<td>
-                <a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/reply/" . $this->Html->ifSet($ticket->id) . "/");?>">
+				<td><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/reply/" . $this->Html->ifSet($ticket->id) . "/");?>">
 				<?php
-					$summary = $this->Html->ifSet($ticket->summary);
-					$truncate = (strlen($summary) > Configure::get("SupportManagerpro.summary_truncate_length"));
-					echo substr($this->Html->_($summary, true), 0, Configure::get("SupportManagerpro.summary_truncate_length")) . ($truncate ? "..." : "");
-				?>
-                </a>
+                    $summary = $string->truncate($this->Html->ifSet($ticket->summary), array('word_length' => Configure::get("SupportManagerpro.summary_truncate_length")));
+                    echo $this->Html->_($summary, true) . ($summary != $this->Html->ifSet($ticket->summary) ? "..." : "");
+				?></a>
 				</td>
-				<td>
+                <td>
+								<?php
+								if (!empty($ticket->client_id)) {
+								?>
+								<a href="<?php echo $this->Html->safe($this->base_uri . "clients/view/" . $this->Html->ifSet($ticket->client_id) . "/");?>" style="text-decoration: none;"><span class='label label-low'><?php echo $this->Html->concat(" ", $this->Html->safe($ticket->client->first_name), $this->Html->safe($ticket->client->last_name));?></span></a>
+								<?php
+								}
+								elseif (!empty($ticket->email)) {
+								?>
+								<a href="mailto:<?php $this->Html->_($ticket->email);?>" style="text-decoration: none"><span class='label label-critical'>
+                                <?php
+                                    if ($this->Html->ifSet($ticket->name)){
+            					        	echo $this->Html->ifSet($ticket->name);
+                                       }else{
+                                            echo $this->Html->_($ticket->email);
+                                    }
+                                ?>
+                                </span></a>
+								<?php
+								}
+								?>
+                </td>
+                <td>
+                <?php
+                if (!empty($ticket->assigned_staff_first_name))
+                    echo $this->Html->concat(" ", $this->Html->_($ticket->assigned_staff_first_name, true), $this->Html->_($ticket->assigned_staff_last_name, true));
+                else
+                    $this->_("AdminTickets.index.unassigned");
+                ?>
+                </td>
+				<td class="last">
+					<?php
+					$this->Html->_($ticket->last_reply_time);
+					?>
 					<?php $this->_("AdminTickets.index.last_reply_by");?>
 					<?php
 					// Show who the last reply was from
@@ -74,65 +101,53 @@
 						else
 							$link_url = "mailto:" . $this->Html->ifSet($ticket->last_reply_email);
 					?>
-					<a href="<?php echo $this->Html->safe($link_url);?>">
+					<a href="<?php echo $this->Html->safe($link_url);?>" style="text-decoration: none;">
 					<?php
 					}
-
-					if ($this->Html->ifSet($ticket->last_reply_by) == "client" || $this->Html->ifSet($ticket->last_reply_by) == "staff")
-						echo $this->Html->concat(" ", $this->Html->_($ticket->last_reply_first_name, true), $this->Html->_($ticket->last_reply_last_name, true));
-					else
-                    if ($this->Html->_($ticket->last_reply_last_name, true)){
-						echo $this->Html->concat(" ", $this->Html->_($ticket->last_reply_first_name, true), $this->Html->_($ticket->last_reply_last_name, true));
-                    }else{
-                        if ($this->Html->ifSet($ticket->name)){
-					        	echo $this->Html->ifSet($ticket->name);
-                           }else{
-                                $this->Html->_($ticket->last_reply_email);
+					
+					if ($this->Html->ifSet($ticket->last_reply_by) == "client" || $this->Html->ifSet($ticket->last_reply_by) == "staff") {
+						if ($this->Html->ifSet($ticket->last_reply_by) == "staff" && $this->Html->ifSet($ticket->last_reply_staff_id) == 0){
+							echo "<span class='label label-grey'>".$this->_("AdminTickets.reply.system")."</span>";
+						}else{
+                            if ($this->Html->ifSet($ticket->last_reply_by) == "staff"){
+							echo $this->Html->concat(" ", $this->Html->_($ticket->last_reply_first_name, true), $this->Html->_($ticket->last_reply_last_name, true));
+                            }else{
+							echo $this->Html->concat(" ", $this->Html->_($ticket->last_reply_first_name, true), $this->Html->_($ticket->last_reply_last_name, true));
+                            }
                         }
                     }
+					else
+
+                        if ($this->Html->ifSet($ticket->name)){
+   					        	echo $this->Html->ifSet($ticket->name);
+                           }else{
+                                echo $this->Html->_($ticket->email);
+                        }
 
 					if ($this->Html->ifSet($ticket->last_reply_by) == "client" || $this->Html->ifSet($ticket->last_reply_by) == "email") {
 					?>
 					</a>
 					<?php
 					}
-                    if ($this->Html->_($ticket->last_reply_first_name, true)){
-                      if ($this->Html->ifSet($ticket->last_reply_by) == "staff"){
-                      echo "<span class='is_staff'>".$this->_("AdminTickets.index.staff", true)."</span>";
-                      }else{
-                      echo "<span class='is_client'>".$this->_("AdminTickets.index.is_client", true)."</span>";
-                      }
-                    }else{
-                      echo "<span class='not_client'>".$this->_("AdminTickets.index.not_client", true)."</span>";
-                    }
 					?>
-				</td>
-				<td class="last">
-					<?php
-					$this->Html->_($ticket->last_reply_time);
-					?>
-				</td>
+                </td>
 			</tr>
 			<?php
 			}
 			unset($i);
 			?>
 		</table>
-
-			<div class="button_row">
-                        <?php if ($ticket->status == "deleted"){?>
-                        <input class="btn_extra" type="submit" onclick="return confirm('<?php echo($this->_("AdminTickets.index.categorylink_purge_confirm", true));?>');" name="purge" value="<?php $this->_("AdminTickets.index.categorylink_purge");?>" />
-                        <?}else{?>
-                        <input class="btn_extra" type="submit" onclick="return confirm('<?php echo($this->_("AdminTickets.index.categorylink_deleted_confirm", true));?>');" name="deleted" value="<?php $this->_("AdminTickets.index.categorylink_deleted");?>" />
-                        <?}?>
-                        <input class="btn_extra" type="submit" onclick="return confirm('<?php echo($this->_("AdminTickets.index.categorylink_merge_confirm", true));?>');" name="merge" value="<?php $this->_("AdminTickets.index.categorylink_merge");?>" />
-                        <?php if ($ticket->status != "spam"){?><input class="btn_extra" type="submit" onclick="return confirm('<?php echo($this->_("AdminTickets.index.categorylink_spam_confirm", true));?>');" name="spam" value="<?php $this->_("AdminTickets.index.categorylink_spam");?>" /><?}?>
-                        <?php if ($ticket->status != "closed"){?><input class="btn_extra" type="submit" onclick="return confirm('<?php echo($this->_("AdminTickets.index.categorylink_close_confirm", true));?>');" name="closed" value="<?php $this->_("AdminTickets.index.categorylink_close");?>" /><?}?>
+		<div id="ticket_actions" style="display:none;">
+			<div class="left">
+				<?php $this->Form->fieldSelect("action", $this->Html->ifSet($ticket_actions, array()), "update_status", array('id' => "ticket_action"));?>
+                 <div class="update_status ticket_action" style="display:none;">
+                       <?php
+				    	$this->Form->fieldSelect("status", $this->Html->ifSet($ticket_statuses, array()), "", array('class' => "medium"));
+				    	?>
+                 </div>
 			</div>
-				<?php
-				$this->Form->end();
-				?>
-
+			<a class="btn_right submit" href="#"><?php $this->_("AdminTickets.index.field_actionsubmit");?></a>
+		</div>
 		<?php
 			// Set pagination
 			$this->Pagination->build();
@@ -146,6 +161,8 @@
 		</div>
 		<?php
 		}
+		
+		$this->Form->end();
 		?>
 		<script type="text/javascript">
 			$(document).ready(function() {
@@ -156,7 +173,71 @@
 				if ($this->Html->ifSet($page) == "1") {
 				?>
 				// Refresh
-				support_managerpro_ticket_time = setTimeout(function() {
+				support_managerpro_ticket_time = startUpdateTimer();
+				<?php
+				}
+				?>
+				
+				$('.tickets').change(function() {
+					if ($(this).val() == 'all') {
+						if ($('#tickets_all').prop('checked'))
+							$('.tickets').attr('checked', 'checked');
+						else
+							$('.tickets').removeAttr('checked');
+					}
+					
+					if ($('.tickets:checked').length > 0) {
+						stopUpdateTimer(support_managerpro_ticket_time);
+						$('#ticket_actions').show();
+					}
+					else {
+						if (support_managerpro_ticket_time) {
+							clearInterval(support_managerpro_ticket_time);
+							startUpdateTimer();
+						}
+						$('#ticket_actions').hide();
+					}
+				});
+				
+                setTicketAction();
+				$('#ticket_action').change(function() {
+					setTicketAction();
+				});
+
+				$('#ticket_number').autocomplete({
+					minLength: 3,
+                    appendTo: ".with_ticket",
+                    position: { my: "left bottom", at: "left top"},
+					source: function(request, response) {
+						$(document).blestaRequest('POST', '<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/searchbycode/");?>',
+							{ _csrf_token: $('#tickets').find('input[name=_csrf_token]').val(), search: request.term},
+							function(data) {
+								if (data && data.tickets) {
+									// Build the response to show
+									var tickets = new Array();
+									for (var id in data.tickets)
+										tickets.push({label:data.tickets[id], value:data.tickets[id], id:id});
+									response(tickets);
+
+									// No results
+									if (tickets.length == 0)
+										$('#no_tickets').show();
+									else
+										$('#no_tickets').hide();
+								}
+							},
+							null,
+							{dataType:'json'}
+						);
+					},
+					select: function(event, ui) {
+						$('#ticket_id').val(ui.item.id);
+					}
+				});
+			});
+			
+			function startUpdateTimer() {
+				return setTimeout(function() {
 					$(this).blestaRequest("GET", '<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/index/" . $this->Html->ifSet($status, "open") . "/");?>',  null,
 						// Success response
 						function(data) {
@@ -172,22 +253,39 @@
 						null,
 						{dataType: 'json'}
 					);
-				}, <?php echo Configure::get("SupportManagerpro.auto_refresh"); ?>000);
-				<?php
-				}
-				?>
-                $("#checkall").click(function () {
-                    $("#tickets #checkitall").attr("checked",this.checked);
-                });
-			});
-</script>
+				}, 30000);
+			}
+			
+			function stopUpdateTimer(timer) {
+				clearTimeout(timer);
+			}
+
+            function setTicketAction() {
+                $('.ticket_action').hide();
+                
+                switch ($('#ticket_action').val()) {
+                    case "merge":
+                        $('.with_ticket').show();
+                    break;
+                    case "update_status":
+                        $('.update_status').show();
+                    break;
+                    default:
+                    break;
+                }
+            }
+		</script>
 		<?php
 		$this->Widget->end();
+
+        if ($this->Html->ifSet($set_ticket_time)) {
 		?>
-		
 		<script type="text/javascript">
 			// Create global ticket_time interval so we can clear before starting a new one
 			var support_managerpro_ticket_time;
 			
 			$("#admin_tickets").blestaBindGuiEvents();
 		</script>
+        <?php
+        }
+        ?>

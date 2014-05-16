@@ -1,6 +1,6 @@
 <?php
 /**
- * Support Manager Client Tickets controller
+ * Support Managerpro Client Tickets controller
  * 
  * @package blesta
  * @subpackage blesta.plugins.support_managerpro
@@ -16,8 +16,9 @@ class ClientTickets extends SupportManagerproController {
 	public function preAction() {
 		parent::preAction();
 		
-		// Do not require login for open ticket page or getPriorities
-		if ($this->action != "add" && $this->action != "departments" && $this->action != "getpriorities")
+		// Do not require login for the following methods
+		if ($this->action != "add" && $this->action != "reply" && $this->action != "close" &&
+			$this->action != "departments" && $this->action != "getpriorities" && $this->action != "getattachment")
 			$this->requireLogin();
 		
 		$this->uses(array("SupportManagerpro.SupportManagerproTickets", "SupportManagerpro.SupportManagerproDepartments"));
@@ -27,6 +28,17 @@ class ClientTickets extends SupportManagerproController {
 		$this->structure->setView(null, $this->orig_structure_view);
 		
 		$this->client_id = $this->Session->read("blesta_client_id");
+
+		$this->set("string", $this->DataStructure->create("string"));
+	}
+	
+	/**
+	 * Builds a hash mapping default support ticket priorities to class names
+	 *
+	 * @return array A key/value array of priority => class name
+	 */
+	private function getPriorityClasses() {
+		return array('low' => "success", 'medium' => "medium", 'high' => "warning", 'critical' => "danger", 'emergency' => "emergency");
 	}
 	
 	/**
@@ -52,14 +64,11 @@ class ClientTickets extends SupportManagerproController {
 		$tickets = $this->SupportManagerproTickets->getList($status, null, $this->client_id, $page, array($sort => $order), false);
 		$total_results = $this->SupportManagerproTickets->getListCount($status, null, $this->client_id);
 		
-		// Set pagination parameters, set group if available
-		$params = array('sort'=>$sort,'order'=>$order);
-		
 		// Overwrite default pagination settings
-		$settings = array_merge(Configure::get("Blesta.pagination"), array(
+		$settings = array_merge(Configure::get("Blesta.pagination_client"), array(
 				'total_results' => $total_results,
 				'uri'=>$this->base_uri . "plugin/support_managerpro/client_tickets/index/" . $status . "/[p]/",
-				'params'=>$params
+				'params'=>array('sort'=>$sort,'order'=>$order)
 			)
 		);
 		$this->helpers(array("Pagination"=>array($this->get, $settings)));
@@ -73,6 +82,7 @@ class ClientTickets extends SupportManagerproController {
 		$this->set("status_count", $status_count);
 		$this->set("priorities", $this->SupportManagerproTickets->getPriorities());
 		$this->set("statuses", $this->SupportManagerproTickets->getStatuses());
+		$this->set("priority_classes", $this->getPriorityClasses());
 		
 		// Render the request if ajax
 		return $this->renderAjaxWidgetIfAsync(isset($this->get[1]) || isset($this->get['sort']));
@@ -161,7 +171,10 @@ class ClientTickets extends SupportManagerproController {
 				
 				$ticket = $this->SupportManagerproTickets->get($ticket_id);
 				$this->flashMessage("message", Language::_("ClientTickets.!success.ticket_created", true, $ticket->code), null, false);
-				$this->redirect($this->base_uri . "plugin/support_managerpro/client_tickets/");
+				$redirect_url = $this->base_uri . "plugin/support_managerpro/client_tickets/";
+				if (!$logged_in)
+					$redirect_url .= "departments/";
+				$this->redirect($redirect_url);
 			}
 		}
 		
@@ -177,13 +190,83 @@ class ClientTickets extends SupportManagerproController {
 	}
 	
 	/**
+	 * Checks whether access can be granted to a client, whether logged-in or not
+	 *
+	 * @param int $ticket_id The ID of the ticket
+	 * @param string $redirect_to The URL to redirect the user to on failure (optional, default null redirect to the client listing)
+	 * @return array A set of key/value pairs including:
+	 * 	- allow_reply_by_url boolean true if access is granted for non-logged-in clients, false otherwise
+	 * 	- ticket mixed An stdClass object representing the ticket, or false if one does not exist
+	 * 	- sid mixed The hash code, if any
+	 */
+	private function requireAccess($ticket_id, $redirect_to = null) {
+		// Fetch the ticket
+		$redirect = false;
+		$allow_reply_by_url = false;
+		$ticket = $this->SupportManagerproTickets->get($ticket_id, true, array("reply", "log"));
+		$sid = (isset($this->get['sid']) ? $this->get['sid'] : (isset($this->post['sid']) ? $this->post['sid'] : null));
+		
+		if ($ticket) {
+			// Login required for clients and closed tickets
+			if ($ticket->client_id !== null) {
+				$this->requireLogin();
+				
+				// Ticket must belong to this client
+				if ($ticket->client_id != $this->client_id)
+					$redirect = true;
+			}
+			// Not-logged-in clients either may not reply to this department, or did not provide the required hash
+			elseif (!$sid || !($department = $this->SupportManagerproDepartments->get($ticket->department_id)) ||
+				($department->company_id != $this->company_id) || ($department->clients_only == "1")) {
+				$redirect = true;
+			}
+			else {
+				// Validate hash in URL to allow replies to this ticket without logging in
+				$params = array();
+				$temp = explode("|", $this->SupportManagerproTickets->systemDecrypt($sid));
+				
+				if (count($temp) > 1) {
+					foreach ($temp as $field) {
+						$field = explode("=", $field, 2);
+						if (count($field) >= 2)
+							$params[$field[0]] = $field[1];
+					}
+				}
+				
+				// Confirm whether the hash matches
+				if (!isset($params['h']) || !isset($params['k']) ||
+					$params['h'] != substr($this->SupportManagerproTickets->generateReplyHash($ticket->id, $params['k']), -16))
+					$redirect = true;
+				else
+					$allow_reply_by_url = true;
+			}
+		}
+		else
+			$redirect = true;
+		
+		// Redirect
+		if ($redirect)
+			$this->redirect(($redirect_to ? $redirect_to : $this->base_uri . "plugin/support_managerpro/client_tickets/"));
+		
+		return array(
+			'allow_reply_by_url' => $allow_reply_by_url,
+			'ticket' => $ticket,
+			'sid' => $sid
+		);
+	}
+	
+	/**
 	 * Reply to a ticket
 	 */
 	public function reply() {
-		// Ensure the ticket was given
-		if (!isset($this->get[0]) || !($ticket = $this->SupportManagerproTickets->get($this->get[0], true, array("reply", "log"))) ||
-			$ticket->client_id != $this->client_id)
-			$this->redirect($this->base_uri . "plugin/support_managerpro/client_tickets/");
+		// Ensure a valid ticket was given
+		$redirect_url = $this->base_uri . "plugin/support_managerpro/client_tickets/";
+		if (!isset($this->get[0]))
+			$this->redirect($redirect_url);
+		
+		// Require valid credentials be given
+		$access = $this->requireAccess($this->get[0], $redirect_url);
+		$ticket = $access['ticket'];
 		
 		$this->uses(array("SupportManagerpro.SupportManagerproStaff"));
 		
@@ -204,6 +287,13 @@ class ClientTickets extends SupportManagerproController {
 					break;
 			}
 			
+			// Check whether the client is closing the ticket
+			$close = false;
+			if (!empty($data['action_type']) && $data['action_type'] == "close") {
+				$data['status'] = "closed";
+				$close = true;
+			}
+			
 			// Create a transaction
 			$this->SupportManagerproTickets->begin();
 			
@@ -213,6 +303,13 @@ class ClientTickets extends SupportManagerproController {
 			if (($errors = $this->SupportManagerproTickets->errors())) {
 				// Error, reset vars
 				$this->SupportManagerproTickets->rollBack();
+				
+				// Close the ticket if necessary
+				if ($close && ($ticket = $this->SupportManagerproTickets->get($ticket->id)) && $ticket->status != "closed") {
+					$this->SupportManagerproTickets->close($ticket->id);
+					$this->flashMessage("message", Language::_("ClientTickets.!success.ticket_closed", true, $ticket->code), null, false);
+					$this->redirect($this->base_uri . "plugin/support_managerpro/client_tickets/" . ($access['allow_reply_by_url'] ? "reply/" . $ticket->id . "/?sid=" . rawurlencode($access['sid']) : ""));
+				}
 				
 				$vars = (object)$this->post;
 				$this->setMessage("error", $errors, false, null, false);
@@ -224,8 +321,13 @@ class ClientTickets extends SupportManagerproController {
 				// Send the email associated with this ticket
 				$this->SupportManagerproTickets->sendEmail($reply_id);
 				
-				$this->flashMessage("message", Language::_("ClientTickets.!success.ticket_updated", true, $ticket->code), null, false);
-				$this->redirect($this->base_uri . "plugin/support_managerpro/client_tickets/");
+				// Check whether the ticket was just closed and set the appropriate message
+				if ($close && ($ticket = $this->SupportManagerproTickets->get($ticket->id)) && $ticket->status == "closed")
+					$this->flashMessage("message", Language::_("ClientTickets.!success.ticket_closed", true, $ticket->code), null, false);
+				else
+					$this->flashMessage("message", Language::_("ClientTickets.!success.ticket_updated", true, $ticket->code), null, false);
+				
+				$this->redirect($this->base_uri . "plugin/support_managerpro/client_tickets/" . ($access['allow_reply_by_url'] ? "reply/" . $ticket->id . "/?sid=" . rawurlencode($access['sid']) : ""));
 			}
 		}
 		
@@ -250,9 +352,11 @@ class ClientTickets extends SupportManagerproController {
 		$this->set("staff_settings", $staff_settings);
 		
 		$this->set("ticket", $ticket);
+		$this->set("sid", $access['sid']);
 		$this->set("vars", $vars);
 		$this->set("statuses", $this->SupportManagerproTickets->getStatuses());
 		$this->set("priorities", $this->SupportManagerproTickets->getPriorities());
+		$this->set("priority_classes", $this->getPriorityClasses());
 	}
 	
 	/**
@@ -260,13 +364,20 @@ class ClientTickets extends SupportManagerproController {
 	 */
 	public function close() {
 		// Ensure a valid ticket was given
-		if (!isset($this->get[0]) || !($ticket = $this->SupportManagerproTickets->get($this->get[0])) ||
-			$ticket->client_id != $this->client_id)
-			$this->redirect($this->base_uri . "plugin/support_managerpro/client_tickets/");
+		$redirect_url = $this->base_uri . "plugin/support_managerpro/client_tickets/";
+		if (empty($this->post['id']))
+			$this->redirect($redirect_url);
 		
-		$this->SupportManagerproTickets->close($ticket->id);
-		$this->flashMessage("message", Language::_("ClientTickets.!success.ticket_closed", true, $ticket->code), null, false);
-		$this->redirect($this->base_uri . "plugin/support_managerpro/client_tickets/");
+		// Require valid credentials be given
+		$access = $this->requireAccess($this->post['id'], $redirect_url);
+		$ticket = $access['ticket'];
+		
+		// Close ticket if not done already
+		if ($ticket && $ticket->status != "closed") {
+			$this->SupportManagerproTickets->close($ticket->id);
+			$this->flashMessage("message", Language::_("ClientTickets.!success.ticket_closed", true, $ticket->code), null, false);
+		}
+		$this->redirect($redirect_url . ($access['allow_reply_by_url'] ? "reply/" . $ticket->id . "/?sid=" . rawurlencode($access['sid']) : ""));
 	}
 	
 	/**
@@ -308,8 +419,11 @@ class ClientTickets extends SupportManagerproController {
 	public function getAttachment() {
 		// Ensure a valid attachment was given
 		if (!isset($this->get[0]) || !($attachment = $this->SupportManagerproTickets->getAttachment($this->get[0])) ||
-			$attachment->client_id != $this->client_id)
-			exit();
+			!isset($attachment->ticket_id))
+			$this->redirect($this->base_uri . "plugin/support_managerpro/client_tickets/");
+		
+		// Require valid credentials be given
+		$this->requireAccess($attachment->ticket_id, null);
 		
 		$this->components(array("Download"));
 		

@@ -1,0 +1,11 @@
+{
+	"version": "2.1.1",
+	"name": "Support Managerpro",
+	"description": "Allows users and staff to open and manage support tickets.",
+	"authors": [
+		{
+			"name": "Phillips Data, Inc.",
+			"url": "http://blesta.com"
+		}
+	]
+}

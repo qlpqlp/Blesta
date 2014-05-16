@@ -32,9 +32,8 @@
 					<td><?php $this->Html->_($ticket->department_name);?></td>
 					<td>
 					<?php
-						$summary = $this->Html->ifSet($ticket->summary);
-						$truncate = (strlen($summary) > Configure::get("SupportManagerpro.summary_truncate_length"));
-						echo substr($this->Html->_($summary, true), 0, Configure::get("SupportManagerpro.summary_truncate_length")) . ($truncate ? "..." : "");
+                        $summary = $string->truncate($this->Html->ifSet($ticket->summary), array('word_length' => Configure::get("SupportManagerpro.summary_truncate_length")));
+                        echo $this->Html->_($summary, true) . ($summary != $this->Html->ifSet($ticket->summary) ? "..." : "");
 					?>
 					</td>
 					<td class="last"><?php $this->Html->_($ticket->last_reply_time);?></td>

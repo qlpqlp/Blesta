@@ -38,6 +38,8 @@ class SupportManagerproDepartments extends SupportManagerproModel {
 	 * 	- mark_messages The message type (optional, required if method is not 'pipe')
 	 * 	- clients_only (optional, defaults to '1')
 	 * 	- override_from_email Whether or not to use the department's email address as the from address in email templates (optional, defaults to '1')
+	 * 	- close_ticket_interval The number of minutes since the last reply to a ticket at which point the ticket can be closed automatically (optional, default null for never)
+	 * 	- response_id The ID of the predefined response to use when a ticket is auto-closed
 	 * 	- status The department status ('hidden' or 'visible')
 	 * @return stdClass The stdClass object representing the newly-created department, or void on error
 	 */
@@ -47,7 +49,8 @@ class SupportManagerproDepartments extends SupportManagerproModel {
 		if ($this->Input->validates($vars)) {
 			$fields = array("company_id", "name", "description", "email", "method",
 				"default_priority", "host", "user", "pass", "port", "security",
-				"box_name", "mark_messages", "clients_only", "override_from_email", "status");
+				"box_name", "mark_messages", "clients_only", "override_from_email",
+				"close_ticket_interval", "response_id", "status");
 			$this->Record->insert("support_departmentspro", $vars, $fields);
 			
 			return $this->get($this->Record->lastInsertId());
@@ -73,6 +76,8 @@ class SupportManagerproDepartments extends SupportManagerproModel {
 	 * 	- mark_messages The message type (optional, required if method is not 'pipe')
 	 * 	- clients_only (optional, defaults to '1')
 	 * 	- override_from_email Whether or not to use the department's email address as the from address in email templates (optional, defaults to '1')
+	 * 	- close_ticket_interval The number of minutes since the last reply to a ticket at which point the ticket can be closed automatically (optional, default null for never)
+	 * 	- response_id The ID of the predefined response to use when a ticket is auto-closed
 	 * 	- status The department status ('hidden' or 'visible')
 	 * @return stdClass The stdClass object representing the newly-created department, or void on error
 	 */
@@ -83,7 +88,8 @@ class SupportManagerproDepartments extends SupportManagerproModel {
 		if ($this->Input->validates($vars)) {
 			$fields = array("name", "description", "email", "method",
 				"default_priority", "host", "user", "pass", "port",  "security",
-				"box_name", "mark_messages", "clients_only", "override_from_email", "status");
+				"box_name", "mark_messages", "clients_only", "override_from_email",
+				"close_ticket_interval", "response_id", "status");
 			$this->Record->where("id", "=", $department_id)->
 				update("support_departmentspro", $vars, $fields);
 			
@@ -264,6 +270,22 @@ class SupportManagerproDepartments extends SupportManagerproModel {
 		return $this->Record->select($fields)->from("support_departmentspro")->
 			leftJoin("support_staff_departmentspro", "support_staff_departmentspro.department_id", "=", "support_departmentspro.id", false)->
 			where("support_departmentspro.company_id", "=", $company_id)->group(array("support_departmentspro.id"));
+	}
+	
+	/**
+	 * Retrieves a list of department intervals (in minutes) representing when a ticket can be closed automatically
+	 *
+	 * @return array A list of minutes and their language
+	 */
+	public function getCloseTicketIntervals() {
+		$options = array();
+		
+		// Limit to days, i.e. [1,30]
+		for ($i=1; $i<=30; $i++) {
+			$options[($i*60*24)] = ($i == 1 ? $this->_("SupportManagerproDepartments.ticket_intervals.day") : $this->_("SupportManagerproDepartments.ticket_intervals.days", $i));
+		}
+		
+		return $options;
 	}
 	
 	/**
@@ -468,6 +490,20 @@ class SupportManagerproDepartments extends SupportManagerproModel {
 					'message' => $this->_("SupportManagerproDepartments.!error.override_from_email.format")
 				)
 			),
+			'close_ticket_interval' => array(
+				'format' => array(
+					'if_set' => true,
+					'rule' => array("matches", "/^[1-9]+[0-9]*$/"),
+					'message' => $this->_("SupportManagerproDepartments.!error.close_ticket_interval.format")
+				)
+			),
+			'response_id' => array(
+				'format' => array(
+					'if_set' => true,
+					'rule' => array(array($this, "validatePredefinedResponse"), $this->ifSet($vars['company_id']), $edit, $this->ifSet($vars['department_id'])),
+					'message' => $this->_("SupportManagerproDepartments.!error.response_id.format")
+				)
+			),
 			'status' => array(
 				'format' => array(
 					'rule' => array("in_array", array_keys($this->getStatuses())),
@@ -641,6 +677,36 @@ class SupportManagerproDepartments extends SupportManagerproModel {
 			return extension_loaded("mailparse");
 		}
 		return true;
+	}
+	
+	/**
+	 * Validates that the given predefined response can be used for this company
+	 *
+	 * @param int $response_id The ID of the predefined response to validate
+	 * @param int $company_id The ID of the company being assigned the response (optional, required if $edit is false)
+	 * @param boolean $edit True if editing an existing department, false otherwise
+	 * @param int $department_id The ID of the department the response is being assigned to (optional, required if $edit is true)
+	 */
+	public function validatePredefinedResponse($response_id, $company_id = null, $edit = false, $department_id = null) {
+		if (!isset($this->SupportManagerproResponses))
+			Loader::loadModels($this, array("SupportManagerpro.SupportManagerproResponses"));
+		
+		$response = $this->SupportManagerproResponses->get($response_id);
+		$valid = false;
+		
+		// Determine whether the response can be assigned to the department
+		if ($response) {
+			if ($edit && !empty($department_id)) {
+				$department = $this->get($department_id);
+				if ($department && $department->company_id == $response->company_id)
+					$valid = true;
+			}
+			elseif ($company_id == $response->company_id) {
+				$valid = true;
+			}
+		}
+		
+		return $valid;
 	}
 }
 ?>

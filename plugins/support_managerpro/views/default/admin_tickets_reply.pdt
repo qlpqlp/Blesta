@@ -1,14 +1,12 @@
 
 				<?php
 				echo $this->Html->ifSet($message);
-				
+
 				$this->Widget->clear();
 				$this->Widget->setStyleSheet($this->view_dir . "css/styles.css", array('id' => "support_managerpro_styles"));
 				$this->Widget->create($this->_("AdminTickets.reply.boxtitle_reply", true, $this->Html->ifSet($ticket->code)), array('id' => "admin_tickets_reply"));
 				?>
 				<div class="inner">
-
-
 					<table class="table">
 						<tr class="heading_row">
 							<td><?php $this->_("AdminTickets.reply.heading_client");?></td>
@@ -19,39 +17,34 @@
 								<?php
 								if (!empty($client)) {
 								?>
-								<a href="<?php echo $this->Html->safe($this->base_uri . "clients/view/" . $this->Html->ifSet($client->id) . "/");?>"><?php echo $this->Html->concat(" ", $this->Html->safe($client->first_name), $this->Html->safe($client->last_name));?></a>
+								<a href="<?php echo $this->Html->safe($this->base_uri . "clients/view/" . $this->Html->ifSet($client->id) . "/");?>" style="text-decoration: none"><span class='label label-low'><?php echo $this->Html->concat(" ", $this->Html->safe($client->first_name), $this->Html->safe($client->last_name));?></span></a>
 								<?php
-                                echo "<span class='is_client'>".$this->_("AdminTickets.index.is_client", true)."</span>";
 								}
 								elseif (!empty($ticket->email)) {
 								?>
-								<a href="mailto:<?php $this->Html->_($ticket->email);?>">
+								<a href="mailto:<?php $this->Html->_($ticket->email);?>" style="text-decoration: none"><span class='label label-critical'>
                                 <?php
                                     if ($this->Html->ifSet($ticket->name)){
             					        	echo $this->Html->ifSet($ticket->name);
                                        }else{
                                             echo $this->Html->_($ticket->email);
                                     }
-                                ?>
+                                ?></span>
                                 </a>
                                 <?php
 
                                     if (empty($ticket->email)){
-                                        echo "<span class='is_client'>".$this->_("AdminTickets.index.is_client", true)."</span>";
-
                                         }else{
-                                         echo "<span class='not_client'>".$this->_("AdminTickets.index.not_client", true)."</span>";
-
                                     if (empty($ticket->name)){$name_c = $ticket->email;}else{$name_c =$ticket->name;}
                                 $this->Form->create("/".Configure::get("Route.admin")."/clients/add/", array('enctype' => "post"));
                                 $this->Form->fieldHidden("first_name", $name_c, array('id' => "first_name"));
                                 $this->Form->fieldHidden("last_name", "-", array('id' => "last_name"));
                                 $this->Form->fieldHidden("email", $ticket->email, array('id' => "email"));
                                 $this->Form->fieldHidden("username_type", "email", array('id' => "username_type_email"));
-                                $this->Form->fieldHidden("new_password", "-", array('id' => "new_password"));
+                                $this->Form->fieldHidden("new_password", rand(100000, 9999999), array('id' => "new_password"));
                                 $this->Form->fieldHidden("client_group_id", "1", array('id' => "client_group_id"));
                                 ?>
-                                <input class="btn_extra" type="submit" value="<?php echo($this->_("AdminTickets.index.add_client", true));?>" />
+                                <a class="btn_right submit" href="#" style="font-size: 10px; text-decoration: none;padding: 0 27px;"><?php $this->_("AdminTickets.index.add_client");?></a>
             					<?php
 			            		$this->Form->end();
                                  }
@@ -64,17 +57,24 @@
 					</table>
                     <p></p>
 					<?php
-				  	$this->Form->create(null, array('id' => "create_ticket", 'enctype' => "multipart/form-data"));
+					$this->Form->create(null, array('id' => "create_ticket", 'enctype' => "multipart/form-data"));
 					?>
+					
 					<table class="table">
 						<tr class="heading_row">
+							<td><?php $this->_("AdminTickets.reply.heading_summary");?></td>
 							<td><?php $this->_("AdminTickets.reply.heading_department");?></td>
 							<td><?php $this->_("AdminTickets.reply.heading_staff_id");?></td>
 							<td><?php $this->_("AdminTickets.reply.heading_priority");?></td>
 							<td><?php $this->_("AdminTickets.reply.heading_status");?></td>
 							<td><?php $this->_("AdminTickets.reply.heading_date_added");?></td>
 						</tr>
-                        <tr>
+						<tr>
+							<td>
+						<?php
+						$this->Form->fieldText("summary", $this->Html->ifSet($vars->summary), array('id' => "summary"));
+						?>
+							</td>
 							<td><?php $this->Form->fieldSelect("department_id", $this->Html->ifSet($departments), $this->Html->ifSet($vars->department_id), array('id' => "department_id"));?></td>
 							<td><?php $this->Form->fieldSelect("ticket_staff_id", $this->Html->ifSet($department_staff), $this->Html->ifSet($vars->ticket_staff_id), array('id' => "ticket_staff_id"));?></td>
 							<td><?php $this->Form->fieldSelect("priority", $this->Html->ifSet($priorities), $this->Html->ifSet($vars->priority), array('id' => "priority"));?></td>
@@ -82,19 +82,7 @@
 							<td><?php echo $this->Date->cast($this->Html->ifSet($ticket->date_added), "date_time");?></td>
 						</tr>
 					</table>
-
-					<p><div class="title_row first">
-						<h3><?php $this->_("AdminTickets.reply.heading_summary");?></h3>
-					</div></p>
-
-					<p>
-						<?php
-						$this->Form->fieldText("summary", $this->Html->ifSet($vars->summary), array('id' => "summary"));
-						?>
-                    </p>
-
-
-
+					
 					<div class="title_row">
 						<h3><?php $this->_("AdminTickets.reply.heading_reply");?></h3>
 					</div>
@@ -152,9 +140,11 @@
 					<?php
 					$this->Form->end();
 					?>
-					<div class="clear"></div>
-				
+					<div class="clear" style="padding-top: 10px"></div>
+					
 					<?php
+					$this->Form->create($this->base_uri . "plugin/support_managerpro/admin_tickets/replyaction/" . $this->Html->ifSet($ticket->id) . "/", array('id' => "ticket_replies"));
+					
 					foreach ($this->Html->ifSet($ticket->replies, array()) as $reply) {
 						if ($this->Html->ifSet($reply->staff_id) != "") {
 							$first_name = $this->Html->ifSet($reply->first_name, $this->_("AdminTickets.reply.system", true));
@@ -175,11 +165,19 @@
 						if ($this->Html->ifSet($reply->type) == "reply" || $this->Html->ifSet($reply->type) == "note") {
 						?>
 						<div class="topbar<?php echo ($this->Html->ifSet($reply->staff_id) != "" ? " staff" : "");?>">
-							<p>
-							<?php
-							$this->_("AdminTickets.reply.reply_date", false, $this->Date->cast($this->Html->ifSet($reply->date_added), Configure::get("SupportManagerpro.reply_date_format")), $first_name, $last_name);
-							?>
-							</p>
+							<div class="reply-by">
+								<p>
+								<?php
+								$this->_("AdminTickets.reply.reply_date", false, $this->Date->cast($this->Html->ifSet($reply->date_added), Configure::get("SupportManagerpro.reply_date_format")), $first_name, $last_name);
+								?>
+								</p>
+							</div>
+							<div class="options">
+								<?php
+								$this->Form->fieldCheckbox("replies[]", $this->Html->ifSet($reply->id), false, array('class'=>"replies"));
+								?>
+							</div>
+							<div class="clear"></div>
 						</div>
 						<div class="left">
 							<div>
@@ -198,7 +196,7 @@
 							?>
 							</p>
 							<?php
-							if ($this->Html->ifSet($reply->staff_id) != "") {
+							if ($this->Html->ifSet($reply->staff_id) != "" && $this->Html->ifSet($reply->staff_id) != 0) {
 								$staff_title = $this->_("AdminTickets.reply.staff_title", true);
 								if ($this->Html->ifSet($staff_settings[$reply->staff_id], false) && !empty($staff_settings[$reply->staff_id]['title']))
 									$staff_title = $this->Html->safe($staff_settings[$reply->staff_id]['title']);
@@ -214,36 +212,30 @@
 							if (!empty($reply->attachments)) {
 							?>
 							<div class="attachments">
-								<?php
-								foreach ($reply->attachments as $attachment) {
-								?>
-								<p><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/getattachment/" . $this->Html->ifSet($attachment->id) . "/");?>"><?php $this->Html->_($attachment->name);?></a></p>
-								<?php
-								}
-								?>
+								<p>
+									<?php
+									foreach ($reply->attachments as $attachment) {
+									?>
+									<span><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/getattachment/" . $this->Html->ifSet($attachment->id) . "/");?>"><?php $this->Html->_($attachment->name);?></a></span>
+									<?php
+									}
+									?>
+								</p>
 							</div>
 							<?php
 							}
 							?>
 							<div id="<?php echo $reply->id; ?>" class="response">
-								<?php echo nl2br($this->Html->_($reply->details, true));?>
+								<?php echo $this->TextParser->encode("markdown", $this->Html->_($reply->details, true));?>
 							</div>
                             <div id="response_q<?php echo $reply->id; ?>" style="display: none">
 								<?php echo $this->Html->_($reply->details, true);?>
 							</div>
 					<div class="button_row">
-<a id="quote<?php echo $reply->id; ?>" style="margin-bottom: 15px !important" class="btn_right quote_link" href="#"><?php echo($this->_("AdminTickets.index.quote", true));?></a>
-<?PHP
-                                $this->Form->create("/".Configure::get("Route.admin")."/plugin/support_managerpro/admin_tickets/index/open/", array('enctype' => "post"));
-                                $this->Form->fieldHidden("reply_id", $reply->id, array('id' => "reply_id"));
-                                ?>
-                                						<a class="btn_right submit" href="#" onclick="return confirm('<?php echo($this->_("AdminTickets.index.categorylink_delete_reply_confirm", true));?>');"><?php echo($this->_("AdminTickets.index.del_reply", true));?></a>
-            					<?php
-			            		$this->Form->end();
-?>
-
-
+                        <a id="quote<?php echo $reply->id; ?>" style="margin-bottom: 15px !important" class="btn_right quote_link" href="#"><?php echo($this->_("AdminTickets.index.quote", true));?></a>
 					</div>
+
+
 						</div>
 						<div class="clear"></div>
 						<?php
@@ -261,6 +253,16 @@
 					<?php
 					}
 					?>
+					<div id="ticket_actions" style="display:none;">
+						<div class="left">
+							<span><?php $this->_("AdminTickets.reply.text_with_selected");?></span>
+							<?php $this->Form->fieldSelect("action", $this->Html->ifSet($ticket_actions));?>
+						</div>
+						<a class="btn_right submit" href="#"><?php $this->_("AdminTickets.reply.field_actionsubmit");?></a>
+					</div>
+					<?php
+					$this->Form->end();
+					?>
 				</div>
 				<?php
 				$this->Widget->end();
@@ -273,7 +275,7 @@ $this->Javascript->setInline("
 			$('.tab_content .tabs li').attr('class', '');
 			$(this).find('a.note').parent('li').attr('class', 'current');
 		}
-		
+
 		// Toggle predefined responses
 		$(this).blestaBindToggleEvent('#add_predefined_response', '#predefined_responses');
 		$('#add_predefined_response').click(function() {
@@ -281,7 +283,7 @@ $this->Javascript->setInline("
 				setPredefinedResponses(null);
 			}
 		});
-		
+
 		// Switch between response categories
 		$('#responses .category a.text_link, #responses .up_level a.text_link').live('click', function() {
 			var match = $(this).attr('id').match(/(\d+)$/);
@@ -289,7 +291,7 @@ $this->Javascript->setInline("
 			setPredefinedResponses(cat_id);
 			return false;
 		});
-		
+
 		// Add the predefined response
 		$('#responses .response_item a.text_link').live('click', function() {
 			var match = $(this).attr('id').match(/(\d+)$/);
@@ -297,7 +299,7 @@ $this->Javascript->setInline("
 			setPredefinedResponse(response_id);
 			return false;
 		});
-		
+
 
 		// Quote Reply
 		$('a.quote_link').live('click', function() {
@@ -318,16 +320,18 @@ $this->Javascript->setInline("
 			$('<li></li>').insertAfter($('#file_attachment')).html($(attachment));
 			return false;
 		});
-		
+
 		$('div.tab_content').blestaTabbedContent();
-		
+
 		$('#department_id').change(function() {
 			setDepartmentStaff($(this).val());
 		});
 
-		$('.btn_extra').ready(function() {
-			$('#new_password').attr('value', $(this).blestaRandomString(10));
-			return false;
+		$('.replies').change(function() {
+			if ($('.replies:checked').length > 0)
+				$('#ticket_actions').show();
+			else
+				$('#ticket_actions').hide();
 		});
 	});
 

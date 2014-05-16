@@ -31,6 +31,7 @@ $lang['ClientTickets.index.heading_last_reply_date'] = "Last Reply";
 $lang['ClientTickets.index.heading_status'] = "Status";
 $lang['ClientTickets.index.heading_options'] = "Options";
 $lang['ClientTickets.index.option_close'] = "Close";
+$lang['ClientTickets.index.option_reply'] = "Reply";
 
 $lang['ClientTickets.add.text_add_attachment'] = "Add Attachment";
 
@@ -42,13 +43,9 @@ $lang['ClientTickets.index.confirm_close'] = "Are you sure you want to close thi
 // Departments
 $lang['ClientTickets.departments.boxtitle_departments'] = "Support Departments";
 
-$lang['ClientTickets.departments.heading_details'] = "Select a Department";
-
 
 // Open Ticket
 $lang['ClientTickets.add.boxtitle_add'] = "Open Ticket";
-
-$lang['ClientTickets.add.heading_details'] = "Ticket Details";
 
 $lang['ClientTickets.add.field_email'] = "Email";
 $lang['ClientTickets.add.field_summary'] = "Summary";
@@ -56,6 +53,9 @@ $lang['ClientTickets.add.field_priority'] = "Priority";
 $lang['ClientTickets.add.field_details'] = "Details";
 $lang['ClientTickets.add.field_attachments'] = "Attachments";
 $lang['ClientTickets.add.field_addsubmit'] = "Open Ticket";
+
+$lang['ClientTickets.add.placeholder_summary'] = "Enter Summary";
+$lang['ClientTickets.add.placeholder_details'] = "Enter Details";
 
 
 // Reply to Ticket
@@ -69,9 +69,12 @@ $lang['ClientTickets.reply.heading_status'] = "Status";
 $lang['ClientTickets.reply.heading_date_added'] = "Date Opened";
 
 $lang['ClientTickets.reply.heading_reply'] = "Add Reply";
+$lang['ClientTickets.reply.placeholder_reply'] = "Enter Details";
 $lang['ClientTickets.reply.field_details'] = "Details";
 $lang['ClientTickets.reply.field_attachments'] = "Attachments";
-$lang['ClientTickets.reply.field_replysubmit'] = "Update Ticket";
+$lang['ClientTickets.reply.field_replysubmit'] = "Reply";
+$lang['ClientTickets.reply.field_closesubmit'] = "Close";
+$lang['ClientTickets.reply.confirm_close'] = "Are you sure you want to close this ticket?";
 
 $lang['ClientTickets.reply.text_add_attachment'] = "Add Attachment";
 

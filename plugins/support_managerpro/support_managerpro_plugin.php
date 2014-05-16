@@ -1,6 +1,6 @@
 <?php
 /**
- * Support Manager plugin handler
+ * Support Managerpro plugin handler
  * 
  * @package blesta
  * @subpackage blesta.plugins.support_managerpro
@@ -9,48 +9,14 @@
  * @link http://www.blesta.com/ Blesta
  */
 class SupportManagerproPlugin extends Plugin {
-
-	/**
-	 * @var string The version of this plugin
-	 */
-	private static $version = "1.6.5";
-	/**
-	 * @var string The authors of this plugin
-	 */
-	private static $authors = array(array('name'=>"Phillips Data, Inc.",'url'=>"http://www.blesta.com"));
 	
 	public function __construct() {
 		Language::loadLang("support_managerpro_plugin", null, dirname(__FILE__) . DS . "language" . DS);
 		
 		// Load components required by this plugin
 		Loader::loadComponents($this, array("Input", "Record"));
-	}
-	
-	/**
-	 * Returns the name of this plugin
-	 *
-	 * @return string The common name of this plugin
-	 */
-	public function getName() {
-		return Language::_("SupportManagerproPlugin.name", true);
-	}
-	
-	/**
-	 * Returns the version of this plugin
-	 *
-	 * @return string The current version of this plugin
-	 */
-	public function getVersion() {
-		return self::$version;
-	}
-
-	/**
-	 * Returns the name and URL for the authors of this plugin
-	 *
-	 * @return array The name and URL of the authors of this plugin
-	 */
-	public function getAuthors() {
-		return self::$authors;
+		
+		$this->loadConfig(dirname(__FILE__) . DS . "config.json");
 	}
 	
 	/**
@@ -59,13 +25,12 @@ class SupportManagerproPlugin extends Plugin {
 	 * @param int $plugin_id The ID of the plugin being installed
 	 */
 	public function install($plugin_id) {
-
 		if (!isset($this->Record))
 			Loader::loadComponents($this, array("Record"));
 		Loader::loadModels($this, array("CronTasks", "Emails", "EmailGroups", "Languages", "Permissions"));
-
+		
 		Configure::load("support_managerpro", dirname(__FILE__) . DS . "config" . DS);
-
+		
 		// Add all support tables, *IFF* not already added
 		try {
 			// Tickets
@@ -86,7 +51,9 @@ class SupportManagerproPlugin extends Plugin {
 				setKey(array("id"), "primary")->
 				setKey(array("code"), "index")->
 				setKey(array("date_added", "status"), "index")->
+				setKey(array("department_id", "status"), "index")->
 				create("support_ticketspro", true);
+
 			// Replies
 			$this->Record->
 				setField("id", array('type'=>"int", 'size'=>10, 'unsigned'=>true, 'auto_increment'=>true))->
@@ -108,7 +75,7 @@ class SupportManagerproPlugin extends Plugin {
 				setKey(array("id"), "primary")->
 				setKey(array("reply_id"), "index")->
 				create("support_attachmentspro", true);
-				
+
 			// Departments
 			$this->Record->
 				setField("id", array('type'=>"int", 'size'=>10, 'unsigned'=>true, 'auto_increment'=>true))->
@@ -127,6 +94,8 @@ class SupportManagerproPlugin extends Plugin {
 				setField("mark_messages", array('type'=>"enum", 'size'=>"'read','deleted'", 'is_null' => true, 'default' => null))->
 				setField("clients_only", array('type'=>"tinyint", 'size'=>1, 'default'=>1))->
 				setField("override_from_email", array('type'=>"tinyint", 'size'=>1, 'default'=>1))->
+				setField("close_ticket_interval", array('type'=>"int", 'size'=>10, 'is_null'=>true, 'default'=>null))->
+				setField("response_id", array('type'=>"int", 'size'=>10, 'is_null'=>true, 'default'=>null))->
 				setField("status", array('type'=>"enum", 'size'=>"'hidden','visible'", 'default'=>"visible"))->
 				setKey(array("id"), "primary")->
 				setKey(array("company_id"), "index")->
@@ -169,7 +138,7 @@ class SupportManagerproPlugin extends Plugin {
 				setField("details", array('type'=>"mediumtext"))->
 				setKey(array("id"), "primary")->
 				setKey(array("category_id"), "index")->
-				create("support_responsespro", true);			
+				create("support_responsespro", true);
 			
 			// Settings
 			$this->Record->
@@ -201,28 +170,8 @@ class SupportManagerproPlugin extends Plugin {
 			return;
 		}
 		
-		// Add a cron task so we can check for incoming email tickets
-		$task = array(
-			'key' => "poll_ticketspro",
-			'plugin_dir' => "support_managerpro",
-			'name' => Language::_("SupportManagerproPlugin.cron.poll_ticketspro_name", true),
-			'description' => Language::_("SupportManagerproPlugin.cron.poll_ticketspro_desc", true),
-			'type' => "interval"
-		);
-		$task_id = $this->CronTasks->add($task);
-		
-		if (!$task_id) {
-			$cron_task = $this->CronTasks->getByKey($task['key'], $task['plugin_dir']);
-			if ($cron_task)
-				$task_id = $cron_task->id;
-		}
-		
-		if ($task_id) {
-			$this->CronTasks->addTaskRun($task_id, array(
-				'interval' => 5,
-				'enabled' => 1
-			));
-		}
+		// Add cron tasks
+		$this->addCronTasks($this->getCronTasks());
 		
 		// Fetch all currently-installed languages for this company, for which email templates should be created for
 		$languages = $this->Languages->getAll(Configure::get("Blesta.company_id"));
@@ -284,9 +233,17 @@ class SupportManagerproPlugin extends Plugin {
 
         //because we cannot get the ID from a field we will add the code to make the magic
         $findcode = '</body>';
-        $putbchatcode = '<?include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?></body>';
-        $path_to_file = VIEWDIR . "admin" . DS . "default" . DS . "structure.pdt";
-        $putchat = file_put_contents($path_to_file, str_replace($findcode, $putbchatcode, file_get_contents($path_to_file)));
+        $putbcode = '<?include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?></body>';
+        $theme=scandir(VIEWDIR . "admin");
+        for ($x=0; $x<count($theme); $x++){
+            if (is_dir(VIEWDIR . "admin" . DS . $theme[$x])){
+              if($theme[$x]!= "." && $theme[$x]!= ".."){
+                $path_to_file = VIEWDIR . "admin" . DS . $theme[$x] . DS . "structure.pdt";
+                $putcode = file_put_contents($path_to_file, str_replace($findcode, $putbcode, file_get_contents($path_to_file)));
+              }
+            }
+        }
+
 
 	}
 	
@@ -492,6 +449,8 @@ class SupportManagerproPlugin extends Plugin {
 			
 			// Upgrade to 1.6.4
 			if (version_compare($current_version, "1.6.4", "<")) {
+				Loader::loadModels($this, array("SupportManagerpro.SupportManagerproDepartments"));
+				
 				// Set date_closed for tickets that are closed
 				$tickets = $this->Record->select(array("id"))->from("support_ticketspro")->
 					where("status", "=", "closed")->where("date_closed", "=", null)->
@@ -499,8 +458,81 @@ class SupportManagerproPlugin extends Plugin {
 				
 				// Set closed date to now
 				foreach ($tickets as $ticket) {
-					$this->Record->where("id", "=", $ticket->id)->update("support_ticketspro", array('date_closed' => date("c")));
+					$this->Record->where("id", "=", $ticket->id)->update("support_ticketspro", array('date_closed' => $this->SupportManagerproDepartments->dateToUtc(date("c"))));
 				}
+			}
+			
+			// Upgrade to 2.0.0
+			if (version_compare($current_version, "2.0.0", "<")) {
+				Loader::loadModels($this, array("CronTasks"));
+				
+				// Fetch all client ticket updated emails to update default text content
+				$emails = $this->Record->select(array("emails.id", "emails.text", "emails.html"))->from("emails")->
+					on("email_groups.id", "=", "emails.email_group_id", false)->
+					innerJoin("email_groups", "email_groups.action", "=", "SupportManagerpro.ticket_updated")->
+					getStatement();
+				
+				// Update email templates
+				foreach ($emails as $email) {
+					// Update text
+					$replace = "If you are a client, you may also update the ticket in our support area at";
+					$replace_with = "You may also update the ticket in our support area at";
+					
+					$vars = array(
+						'text' => str_replace($replace, $replace_with, $email->text),
+						'html' => str_replace($replace, $replace_with, $email->html)
+					);
+					
+					if ($vars['html'] != $email->html || $vars['text'] != $email->text) {
+						$this->Record->where("id", "=", $email->id)->update("emails", $vars);
+					}
+				}
+				
+				// Add new cron task to auto-close open tickets
+				$cron_tasks = $this->getCronTasks();
+				$task = null;
+				foreach ($cron_tasks as $task) {
+					if ($task['key'] == "close_ticketspro")
+						break;
+				}
+				
+				if ($task)
+					$this->addCronTasks(array($task));
+				
+				// Update support departments to include the new close_ticket_interval field
+				$this->Record->query("ALTER TABLE `support_departmentspro` ADD `close_ticket_interval` INT( 10 ) NULL DEFAULT NULL AFTER `override_from_email` ;");
+				$this->Record->query("ALTER TABLE `support_departmentspro` ADD `response_id` INT( 10 ) NULL DEFAULT NULL AFTER `close_ticket_interval` ;");
+				
+				// Add new index
+				$this->Record->query("ALTER TABLE `support_ticketspro` ADD INDEX ( `department_id` , `status` ) ;");
+
+
+               //because we cannot get the ID from a field we will add the code to make the magic
+                $findcode = '<?include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?>';
+                $rmbcode = '';
+                $theme=scandir(VIEWDIR . "admin");
+                for ($x=0; $x<count($theme); $x++){
+                    if (is_dir(VIEWDIR . "admin" . DS . $theme[$x])){
+                      if($theme[$x]!= "." && $theme[$x]!= ".."){
+                        $path_to_file = VIEWDIR . "admin" . DS . $theme[$x] . DS . "structure.pdt";
+                        $rmcode = file_put_contents($path_to_file, str_replace($findcode, $rmbcode, file_get_contents($path_to_file)));
+                      }
+                    }
+                }
+
+               //because we cannot get the ID from a field we will add the code to make the magic
+                $findcode = '</body>';
+                $putbcode = '<?include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?></body>';
+                $theme=scandir(VIEWDIR . "admin");
+                for ($x=0; $x<count($theme); $x++){
+                    if (is_dir(VIEWDIR . "admin" . DS . $theme[$x])){
+                      if($theme[$x]!= "." && $theme[$x]!= ".."){
+                        $path_to_file = VIEWDIR . "admin" . DS . $theme[$x] . DS . "structure.pdt";
+                        $putcode = file_put_contents($path_to_file, str_replace($findcode, $putbcode, file_get_contents($path_to_file)));
+                      }
+                    }
+                }
+
 			}
 		}
 	}
@@ -512,14 +544,14 @@ class SupportManagerproPlugin extends Plugin {
 	 * @param boolean $last_instance True if $plugin_id is the last instance across all companies for this plugin, false otherwise
 	 */
 	public function uninstall($plugin_id, $last_instance) {
-
 		Loader::loadModels($this, array("CronTasks", "Emails", "EmailGroups", "Permissions"));
 		Configure::load("support_managerpro", dirname(__FILE__) . DS . "config" . DS);
 
 		$permissions = Configure::get("SupportManagerpro.install.permissions");		
 		$emails = Configure::get("SupportManagerpro.install.emails");
 		
-		$cron_task_run = $this->CronTasks->getTaskRunByKey("poll_ticketspro", "support_managerpro");
+		// Fetch the cron tasks for this plugin
+		$cron_tasks = $this->getCronTasks();
 		
 		// Remove the tables created by this plugin
 		if ($last_instance) {
@@ -550,56 +582,81 @@ class SupportManagerproPlugin extends Plugin {
 					$this->Permissions->deleteGroup($group->id);
 			}
 			
-			// Remove the cron task
-			$cron_task = $this->CronTasks->getByKey("poll_ticketspro", "support_managerpro");
-			if ($cron_task)
-				$this->CronTasks->delete($cron_task->id, "support_managerpro");
+			// Remove the cron tasks
+			foreach ($cron_tasks as $task) {
+				$cron_task = $this->CronTasks->getByKey($task['key'], "support_managerpro");
+				if ($cron_task)
+					$this->CronTasks->delete($cron_task->id, "support_managerpro");
+			}
 		}
 		
-		// Remove individual task run
-		if ($cron_task_run)
-			$this->CronTasks->deleteTaskRun($cron_task_run->task_run_id);
+		// Remove individual cron task runs
+		foreach ($cron_tasks as $task) {
+			$cron_task_run = $this->CronTasks->getTaskRunByKey($task['key'], "support_managerpro");
+			if ($cron_task_run)
+				$this->CronTasks->deleteTaskRun($cron_task_run->task_run_id);
+		}
 
 		// Remove emails and email groups as necessary
 		foreach ($emails as $email) {
 			// Fetch the email template created by this plugin
 			$group = $this->EmailGroups->getByAction($email['action']);
-
+			
 			// Delete all emails templates belonging to this plugin's email group and company
 			if ($group) {
 				$this->Emails->deleteAll($group->id, Configure::get("Blesta.company_id"));
-
+				
 				if ($last_instance)
 					$this->EmailGroups->delete($group->id);
 			}
 		}
-
+		
 		// Remove permissions
 		if (!$last_instance) {
 			foreach ($permissions as $set) {
 				foreach ($set['permissions'] as $permission) {
 					$permission = $this->Permissions->getByAlias($permission['alias'], $plugin_id);
-
+					
 					if ($permission)
 						$this->Permissions->delete($permission->id);
 				}
-
+				
 				// Get the permission group
 				$group = $this->Permissions->getGroupByAlias($set['alias'], $plugin_id);
-
+				
 				if ($group)
 					$this->Permissions->deleteGroup($group->id);
 			}
 		}
-        //because we cannot get the ID from a field we will add the code to make the magic
-        $findcode = '<?include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?>';
-        $rmbchatcode = '';
-        $path_to_file = VIEWDIR . "admin" . DS . "default" . DS . "structure.pdt";
-        $rmchat = file_put_contents($path_to_file, str_replace($findcode, $rmbchatcode, file_get_contents($path_to_file)));
-        // remove nav cache
-        array_map('unlink', glob(CACHEDIR . "1" . DS . "nav" . DS . "*.html"));        
-	}
 
+               //because we cannot get the ID from a field we will add the code to make the magic
+                $findcode = '<?include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?>';
+                $rmbcode = '';
+                $theme=scandir(VIEWDIR . "admin");
+                for ($x=0; $x<count($theme); $x++){
+                    if (is_dir(VIEWDIR . "admin" . DS . $theme[$x])){
+                      if($theme[$x]!= "." && $theme[$x]!= ".."){
+                        $path_to_file = VIEWDIR . "admin" . DS . $theme[$x] . DS . "structure.pdt";
+                        $rmcode = file_put_contents($path_to_file, str_replace($findcode, $rmbcode, file_get_contents($path_to_file)));
+                      }
+                    }
+                }
+
+               //because we cannot get the ID from a field we will add the code to make the magic
+                $findcode = '</body>';
+                $putbcode = '<?include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?></body>';
+                $theme=scandir(VIEWDIR . "admin");
+                for ($x=0; $x<count($theme); $x++){
+                    if (is_dir(VIEWDIR . "admin" . DS . $theme[$x])){
+                      if($theme[$x]!= "." && $theme[$x]!= ".."){
+                        $path_to_file = VIEWDIR . "admin" . DS . $theme[$x] . DS . "structure.pdt";
+                        $putcode = file_put_contents($path_to_file, str_replace($findcode, $putbcode, file_get_contents($path_to_file)));
+                      }
+                    }
+                }
+
+	}
+	
 	/**
 	 * Returns all actions to be configured for this widget (invoked after install() or upgrade(), overwrites all existing actions)
 	 *
@@ -699,33 +756,100 @@ class SupportManagerproPlugin extends Plugin {
 	 */
 	public function cron($key) {
 		
-		if ($key == "poll_ticketspro") {
-			// Set options when processing emails
-			$webdir = WEBDIR;
-			$is_cli = (empty($_SERVER['REQUEST_URI']));
+		switch ($key) {
+			case "poll_ticketspro":
+				Loader::loadModels($this, array("SupportManagerpro.SupportManagerproDepartments"));
+				
+				// Set options when processing emails
+				$webdir = $this->SupportManagerproDepartments->getWebDirectory();
+				$is_cli = (empty($_SERVER['REQUEST_URI']));
+				
+				// Set the URIs to the admin/client portals
+				$options = array(
+					'is_cli' => $is_cli,
+					'client_uri' => $webdir . Configure::get("Route.client") . "/",
+					'admin_uri' => $webdir . Configure::get("Route.admin") . "/"
+				);
+				
+				Loader::loadComponents($this, array("SupportManagerpro.TicketManagerpro"));
+				$this->TicketManagerpro->setOptions($options);
+				$this->TicketManagerpro->processDepartmentEmails();
+				break;
+			case "close_ticketspro":
+				$this->cronCloseTickets();
+				break;
+			default:
+				break;
+		}
+	}
+	
+	/**
+	 * Performs the close tickets action
+	 */
+	private function cronCloseTickets() {
+		// Fetch all departments
+		Loader::loadModels($this, array("SupportManagerpro.SupportManagerproDepartments", "SupportManagerpro.SupportManagerproTickets"));
+		$departments = $this->SupportManagerproDepartments->getAll(Configure::get("Blesta.company_id"));
+		
+		foreach ($departments as $department)
+			$this->SupportManagerproTickets->closeAllByDepartment($department->id);
+	}
+	
+	/**
+	 * Retrieves cron tasks available to this plugin along with their default values
+	 *
+	 * @return array A list of cron tasks
+	 */
+	private function getCronTasks() {
+		return array(
+			// Cron task to check for incoming email tickets
+			array(
+				'key' => "poll_ticketspro",
+				'plugin_dir' => "support_managerpro",
+				'name' => Language::_("SupportManagerproPlugin.cron.poll_ticketspro_name", true),
+				'description' => Language::_("SupportManagerproPlugin.cron.poll_ticketspro_desc", true),
+				'type' => "interval",
+				'type_value' => 5,
+				'enabled' => 1
+			),
+			// Cron task to auto-close tickets
+			array(
+				'key' => "close_ticketspro",
+				'plugin_dir' => "support_managerpro",
+				'name' => Language::_("SupportManagerproPlugin.cron.close_ticketspro_name", true),
+				'description' => Language::_("SupportManagerproPlugin.cron.close_ticketspro_desc", true),
+				'type' => "interval",
+				'type_value' => 360, // 6 hours
+				'enabled' => 1
+			)
+		);
+	}
+	
+	/**
+	 * Attempts to add new cron tasks for this plugin
+	 *
+	 * @param array $tasks A list of cron tasks to add
+	 * @see SupportManagerproPlugin::install(), SupportManagerproPlugin::upgrade(), SupportManagerproPlugin::getCronTasks()
+	 */
+	private function addCronTasks(array $tasks) {
+		foreach ($tasks as $task) {
+			$task_id = $this->CronTasks->add($task);
 			
-			// Set default webdir if running via CLI
-			if ($is_cli) {
-				Loader::loadModels($this, array("Settings"));
-				$root_web = $this->Settings->getSetting("root_web_dir");
-				if ($root_web) {
-					$webdir = str_replace(DS, "/", str_replace(rtrim($root_web->value, DS), "", ROOTWEBDIR));
-					
-					if (!HTACCESS)
-						$webdir .= "index.php/";
-				}
+			if (!$task_id) {
+				$cron_task = $this->CronTasks->getByKey($task['key'], $task['plugin_dir']);
+				if ($cron_task)
+					$task_id = $cron_task->id;
 			}
 			
-			// Set the URIs to the admin/client portals
-			$options = array(
-				'is_cli' => $is_cli,
-				'client_uri' => $webdir . Configure::get("Route.client") . "/",
-				'admin_uri' => $webdir . Configure::get("Route.admin") . "/"
-			);
-			
-			Loader::loadComponents($this, array("SupportManagerpro.TicketManager"));
-			$this->TicketManager->setOptions($options);
-			$this->TicketManager->processDepartmentEmails();
+			if ($task_id) {
+				$task_vars = array('enabled' => $task['enabled']);
+				if ($task['type'] == "interval")
+					$task_vars['interval'] = $task['type_value'];
+				else
+					$task_vars['time'] = $task['type_value'];
+				
+				$this->CronTasks->addTaskRun($task_id, $task_vars);
+			}
 		}
 	}
 }

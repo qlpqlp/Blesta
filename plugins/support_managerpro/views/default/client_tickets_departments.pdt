@@ -1,33 +1,39 @@
+
 			<?php
+			// Don't show this container when only rendering the widget section
+			if (!$this->Html->ifSet($render_section)) {
+			?>
+		<div class="col-md-12">
+			<?php
+			}
 			echo $this->Html->ifSet($message);
 			
 			$this->WidgetClient->clear();
-			$this->WidgetClient->renderSubHead(false);
 			$this->WidgetClient->setStyleSheet($this->view_dir . "css/styles.css", array('id' => "support_managerpro_styles"));
 			$this->WidgetClient->create($this->_("ClientTickets.index.boxtitle_tickets", true), array('id'=>"client_tickets"), $this->Html->ifSet($render_section, null));
+			$this->WidgetClient->startBody();
 			?>
-			<div class="heading first">
-				<h5><?php $this->_("ClientTickets.departments.heading_details");?></h5>
-			</div>
-			<div id="departments" class="pad">
+			<div class="row">				
 				<?php
 				if (!empty($departments)) {
 					$i = 0;
 					foreach ($this->Html->ifSet($departments, array()) as $department) {
 					?>
-					<div class="half section">
-						<div class="department">
-							<h1><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/client_tickets/add/" . $this->Html->ifSet($department->id) . "/");?>"><?php $this->Html->_($department->name);?></a></h1>
+				<div class="col-md-6">
+					<div class="list-group">
+						<a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/client_tickets/add/" . $this->Html->ifSet($department->id) . "/");?>" class="list-group-item">
+							<h4><?php $this->Html->_($department->name);?></h4>
 							<?php
 							if (!empty($department->description))
 								echo $this->TextParser->encode("markdown", $this->Html->_($department->description, true));
 							?>
-						</div>
+						</a>
 					</div>
-					<?php
+				</div>
+				<?php
 						if ($i++%2 == 1) {
 						?>
-					<div class="clear">&nbsp;</div>
+				<div class="clear">&nbsp;</div>
 						<?php
 						}
 					}
@@ -35,11 +41,23 @@
 				}
 				else {
 				?>
-				<p><?php $this->_("ClientTickets.!notice.no_departments");?></p>
+				<div class="col-md-12">
+					<div class="alert alert-info">
+						<p><?php $this->_("ClientTickets.!notice.no_departments");?></p>
+					</div>
+				</div>
 				<?php
 				}
 				?>
 			</div>
 			<?php
+			$this->WidgetClient->endBody();
 			$this->WidgetClient->end();
+			
+			// Don't show this container when only rendering the widget section
+			if (!$this->Html->ifSet($render_section)) {
+			?>
+		</div>
+			<?php
+			}
 			?>

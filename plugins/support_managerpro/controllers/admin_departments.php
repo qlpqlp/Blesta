@@ -1,6 +1,6 @@
 <?php
 /**
- * Support Manager Admin Departments controller
+ * Support Managerpro Admin Departments controller
  * 
  * @package blesta
  * @subpackage blesta.plugins.support_managerpro
@@ -18,7 +18,7 @@ class AdminDepartments extends SupportManagerproController {
 		
 		$this->requireLogin();
 		
-		$this->uses(array("SupportManagerpro.SupportManagerproDepartments"));
+		$this->uses(array("SupportManagerpro.SupportManagerproDepartments", "SupportManagerpro.SupportManagerproResponses"));
 		
 		// Restore structure view location of the admin portal
 		$this->structure->setDefaultView(APPDIR);
@@ -53,6 +53,7 @@ class AdminDepartments extends SupportManagerproController {
 		
 		$this->set("departments", $departments);
 		$this->set("priorities", $this->SupportManagerproDepartments->getPriorities());
+        $this->set("string", $this->DataStructure->create("string"));
 		
 		return $this->renderAjaxWidgetIfAsync(isset($this->get[0]) || isset($this->get['sort']));
 	}
@@ -61,6 +62,8 @@ class AdminDepartments extends SupportManagerproController {
 	 * Add a department
 	 */
 	public function add() {
+		$this->uses(array("SupportManagerpro.SupportManagerproTickets"));
+		
 		// Create a department
 		if (!empty($this->post)) {
 			// Set empty checkboxes
@@ -69,6 +72,12 @@ class AdminDepartments extends SupportManagerproController {
 				if (!isset($this->post[$checkbox]))
 					$this->post[$checkbox] = "0";
 			}
+			
+			// Set the close ticket interval and response ID to null if not set
+			if (empty($this->post['close_ticket_interval']))
+				$this->post['close_ticket_interval'] = null;
+			if (empty($this->post['response_id']))
+				$this->post['response_id'] = null;
 			
 			// Set the company ID
 			$data = $this->post;
@@ -92,12 +101,23 @@ class AdminDepartments extends SupportManagerproController {
 		if (!isset($vars))
 			$vars = (object)array('port' => 110, 'box_name' => "INBOX", 'clients_only' => "1");
 		
+		// Set the selected auto response, if any
+		if (!empty($vars->response_id)) {
+			$response = $this->SupportManagerproResponses->get($vars->response_id);
+			if ($response && $response->company_id == $this->company_id)
+				$this->set("response", $response);
+			else
+				unset($vars->response_id);
+		}
+		
 		$this->set("vars", $vars);
 		$this->set("priorities", $this->SupportManagerproDepartments->getPriorities());
 		$this->set("methods", $this->SupportManagerproDepartments->getMethods());
 		$this->set("statuses", $this->SupportManagerproDepartments->getStatuses());
 		$this->set("security_types", $this->SupportManagerproDepartments->getSecurityTypes());
 		$this->set("message_types", $this->SupportManagerproDepartments->getMessageTypes());
+		$this->set("close_ticket_intervals", array('' => Language::_("Global.select.never", true)) + $this->SupportManagerproDepartments->getCloseTicketIntervals());
+		$this->set("ticket_statuses", $this->SupportManagerproTickets->getStatuses());
 		$this->set("piping_config", "/usr/bin/php " . realpath(dirname(__FILE__) . DS . ".." . DS) . DS . "pipe.php plugin/support_managerpro/ticket_pipe/index/" . $this->company_id . "/");
 	}
 	
@@ -109,6 +129,8 @@ class AdminDepartments extends SupportManagerproController {
 			$this->company_id != $department->company_id)
 			$this->redirect($this->base_uri . "plugin/support_managerpro/admin_departments/");
 		
+		$this->uses(array("SupportManagerpro.SupportManagerproTickets"));
+		
 		// Update a department
 		if (!empty($this->post)) {
 			// Set empty checkboxes
@@ -117,7 +139,13 @@ class AdminDepartments extends SupportManagerproController {
 				if (!isset($this->post[$checkbox]))
 					$this->post[$checkbox] = "0";
 			}
-				
+			
+			// Set the close ticket interval and response ID to null if not set
+			if (empty($this->post['close_ticket_interval']))
+				$this->post['close_ticket_interval'] = null;
+			if (empty($this->post['response_id']))
+				$this->post['response_id'] = null;
+			
 			$department = $this->SupportManagerproDepartments->edit($department->id, $this->post);
 			
 			if (($errors = $this->SupportManagerproDepartments->errors())) {
@@ -137,12 +165,23 @@ class AdminDepartments extends SupportManagerproController {
 		if (!isset($vars))
 			$vars = $department;
 		
+		// Set the selected auto response, if any
+		if (!empty($vars->response_id)) {
+			$response = $this->SupportManagerproResponses->get($vars->response_id);
+			if ($response && $response->company_id == $this->company_id)
+				$this->set("response", $response);
+			else
+				unset($vars->response_id);
+		}
+		
 		$this->set("vars", $vars);
 		$this->set("priorities", $this->SupportManagerproDepartments->getPriorities());
 		$this->set("methods", $this->SupportManagerproDepartments->getMethods());
 		$this->set("statuses", $this->SupportManagerproDepartments->getStatuses());
 		$this->set("security_types", $this->SupportManagerproDepartments->getSecurityTypes());
 		$this->set("message_types", $this->SupportManagerproDepartments->getMessageTypes());
+		$this->set("close_ticket_intervals", array('' => Language::_("Global.select.never", true)) + $this->SupportManagerproDepartments->getCloseTicketIntervals());
+		$this->set("ticket_statuses", $this->SupportManagerproTickets->getStatuses());
 		$this->set("piping_config", "/usr/bin/php " . realpath(dirname(__FILE__) . DS . ".." . DS) . DS . "pipe.php plugin/support_managerpro/ticket_pipe/index/" . $this->company_id . "/");
 	}
 	
@@ -188,6 +227,50 @@ class AdminDepartments extends SupportManagerproController {
 		echo $this->partial("admin_departments_assigned_staff", $vars);
 		
 		// Render without layout
+		return false;
+	}
+	
+	/**
+	 * AJAX retrieves the partial that lists categories and responses
+	 */
+	public function getResponseListing() {
+		// Ensure a valid category was given
+		$category = (isset($this->get[0]) ? $this->SupportManagerproResponses->getCategory($this->get[0]) : null);
+		if ($category && $category->company_id != $this->company_id) {
+			header($this->server_protocol . " 401 Unauthorized");
+			exit();
+		}
+		
+		// Load language for responses
+		Language::loadLang("admin_responses", null, PLUGINDIR . "support_managerpro" . DS . "language" . DS);
+		
+		// Build the partial for listing categories and responses
+		$category_id = (isset($category->id) ? $category->id : null);
+		$vars = array(
+			'categories' => $this->SupportManagerproResponses->getAllCategories($this->company_id, $category_id),
+			'category' => $category,
+			'show_links' => false
+		);
+		
+		if ($category)
+			$vars['responses'] = $this->SupportManagerproResponses->getAll($this->company_id, $category_id);
+		
+		echo $this->Json->encode($this->partial("admin_responses_response_list", $vars));
+		return false;
+	}
+	
+	/**
+	 * AJAX retrieves a specific predefined response
+	 */
+	public function getResponse() {
+		// Ensure a valid response was given
+		$response = (isset($this->get[0]) ? $this->SupportManagerproResponses->get($this->get[0]) : null);
+		if ($response && $response->company_id != $this->company_id) {
+			header($this->server_protocol . " 401 Unauthorized");
+			exit();
+		}
+		
+		echo $this->Json->encode($response);
 		return false;
 	}
 }

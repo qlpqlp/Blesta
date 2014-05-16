@@ -1,1 +1,20 @@
-        <?php echo($this->_("SupportManagerproPlugin.nav_primary_client.main", true));?><span class="top_row" style='margin-left: 5px; padding: 4px 7px 4px 7px;color: #fff;-webkit-border-radius: 5px;-moz-border-radius: 5px;border-radius: 5px;float: none !important'><?php echo($status_count['open']);?></span>
+<style type="text/css">
+<!--
+.spro_badge {
+    top: -8px;
+    font-size: 10px;
+    font-weight: 700;
+    float: none !important; position: relative;
+    padding: 2px 5px 3px 5px;color: #fff;
+    background-image: linear-gradient(#fa3c45, #dc0d17);
+    background-image: -webkit-gradient(linear, center top, center bottom, from(#fa3c45), to(#dc0d17));
+    background-image: -webkit-linear-gradient(#fa3c45, #dc0d17);
+    -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, .7);
+    box-shadow: 0px 1px 1px rgba(0,0,0,0.7);
+    text-shadow: 0px -1px 0px rgba(0,0,0,0.4);
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;border-radius: 10px;
+}
+-->
+</style>
+        <?php echo($this->_("SupportManagerproPlugin.nav_primary_client.main", true));?><?php if($status_count['open'] > 0){?><span class="spro_badge"><?php echo($status_count['open']);?></span><?}?>

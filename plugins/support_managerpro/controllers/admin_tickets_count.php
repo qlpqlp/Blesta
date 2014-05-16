@@ -1,11 +1,12 @@
 <?php
 /**
- * Live Chat plugin controller
+ * Support Manager Admin Tickets controller
  *
  * @package blesta
- * @subpackage blesta.plugins.live_chat
- * @copyright Copyright (c) 1998, Infoscan - Informática, Lda.
- * @link http://www.weblx.net/ WebLX
+ * @subpackage blesta.plugins.support_managerpro
+ * @copyright Copyright (c) 2010, Phillips Data, Inc.
+ * @license http://www.blesta.com/license/ The Blesta License Agreement
+ * @link http://www.blesta.com/ Blesta
  */
 class AdminTicketsCount extends SupportManagerproController {
 

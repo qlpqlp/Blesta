@@ -1,6 +1,6 @@
 <?php
 /**
- * Support Manager Admin Tickets controller
+ * Support Managerpro Admin Tickets controller
  *
  * @package blesta
  * @subpackage blesta.plugins.support_managerpro
@@ -9,7 +9,7 @@
  * @link http://www.blesta.com/ Blesta
  */
 class AdminTickets extends SupportManagerproController {
-
+	
 	/**
 	 * Setup
 	 */
@@ -17,16 +17,43 @@ class AdminTickets extends SupportManagerproController {
 		parent::preAction();
 		
 		$this->requireLogin();
-
+		
 		$this->uses(array("SupportManagerpro.SupportManagerproStaff", "SupportManagerpro.SupportManagerproTickets"));
 		
 		// Restore structure view location of the admin portal
 		$this->structure->setDefaultView(APPDIR);
 		$this->structure->setView(null, $this->orig_structure_view);
-
+		
 		$this->staff_id = $this->Session->read("blesta_staff_id");
-	}
 
+        $this->set("string", $this->DataStructure->create("string"));
+	}
+	
+	/**
+	 * Retrieves a key/value list of actions that can be performed on tickets
+	 *
+	 * @return array A list of key/value pairs representing valid actions
+	 */
+	private function getTicketActions() {
+		return array(
+            'update_status' => Language::_("Global.action.update_status", true),
+			'merge' => Language::_("Global.action.merge", true),
+            'permanent_delete' => Language::_("Global.action.pdelete", true)
+		);
+	}
+	
+	/**
+	 * Retrieves a key/value list of actions that can be performed on replies
+	 *
+	 * @return array A list of key/value pairs representing valid actions
+	 */
+	private function getReplyActions() {
+		return array(
+			'split' => Language::_("Global.action.split", true),
+            'permanent_delete' => Language::_("Global.action.pdelete", true)
+		);
+	}
+	
 	/**
 	 * Sets a message to the view if no staff or departments are set
 	 */
@@ -47,82 +74,7 @@ class AdminTickets extends SupportManagerproController {
 	 * View tickets
 	 */
 	public function index() {
-
-		// Check if there is any selected Tickets
-        if (isset($this->post['selectedtickets'])) {
-            $data = $this->post;
-            $resultadosm = implode(',', $data['selectedtickets']);
-
-                //change the status to CLOSED
-                if (isset($data['closed'])) {
-                    $gtid = $data['selectedtickets'];
-                    $multiarray=count($gtid);
-
-                        for($x=0;$x<$multiarray;$x++)
-                        {
-                            $this->SupportManagerproTickets->ClosedStatus($gtid[$x]);
-
-                         }
-
-                }
-
-                //change the status to SPAM
-                if (isset($data['spam'])) {
-                    $gtid = $data['selectedtickets'];
-                    $multiarray=count($gtid);
-
-                        for($x=0;$x<$multiarray;$x++)
-                        {
-                            $this->SupportManagerproTickets->SpamStatus($gtid[$x]);
-
-                         }
-
-                }
-                //change the status to DELETED
-                if (isset($data['deleted'])) {
-                    $gtid = $data['selectedtickets'];
-                    $multiarray=count($gtid);
-
-                        for($x=0;$x<$multiarray;$x++)
-                        {
-                            $this->SupportManagerproTickets->DeletedStatus($gtid[$x]);
-
-                         }
-
-                }
-                //Merge Tickets
-                if (isset($data['merge'])) {
-                    $gtid = $data['selectedtickets'];
-                    $multiarray=count($gtid);
-
-                        for($x=0;$x<$multiarray;$x++)
-                        {
-                            if ($x > 0){
-                            $this->SupportManagerproTickets->MergeTickets($gtid[$x],$gtid[0]);
-                            }
-                         }
-
-                }
-                //Permanent Delete Tickets
-                if (isset($data['purge'])) {
-                    $gtid = $data['selectedtickets'];
-                    $multiarray=count($gtid);
-
-                        for($x=0;$x<$multiarray;$x++)
-                        {
-                            $this->SupportManagerproTickets->PurgeTickets($gtid[$x]);
-
-                         }
-
-                }
-
-        }
-
-
-		// Check if there is any reply to be deleted
-        if (isset($this->post['reply_id'])) {
-                            $this->SupportManagerproTickets->PurgeReply($this->post['reply_id']);
-        }
+		$this->uses(array("Clients", "SupportManagerpro.SupportManagerproDepartments"));
 
 		$status = (isset($this->get[0]) ? $this->get[0] : "open");
 		$page = (isset($this->get[1]) ? (int)$this->get[1] : 1);
@@ -159,20 +111,29 @@ class AdminTickets extends SupportManagerproController {
 		);
 		$this->helpers(array("Pagination"=>array($this->get, $settings)));
 		$this->Pagination->setSettings(Configure::get("Blesta.pagination_ajax"));
-		
+
 		// Set the time that the ticket was last replied to
-		foreach ($tickets as &$ticket)
+		foreach ($tickets as &$ticket){
 			$ticket->last_reply_time = $this->timeSince($ticket->last_reply_date);
-		
+
+		if (!empty($ticket->client_id))
+            $ticket->client = $this->Clients->get($ticket->client_id, false);
+        }
+
 		$this->set("staff_id", $this->staff_id);
 		$this->set("tickets", $tickets);
 		$this->set("page", $page);
 		$this->set("status_count", $status_count);
 		$this->set("priorities", $this->SupportManagerproTickets->getPriorities());
-		
+		$this->set("ticket_actions", $this->getTicketActions());
+        $this->set("ticket_statuses", $this->SupportManagerproTickets->getStatuses());
+		// Set the client this ticket belongs to
+
 		// Set a message if staff/departments are not setup
-		if (!$this->isAjax())
+		if (!$this->isAjax()) {
 			$this->setDepartmentStaffNotice();
+            $this->set("set_ticket_time", true);
+		}
 		
 		// Render the request if ajax
 		return $this->renderAjaxWidgetIfAsync(isset($this->get[1]) || isset($this->get['sort']));
@@ -195,9 +156,7 @@ class AdminTickets extends SupportManagerproController {
 			'open' => $this->SupportManagerproTickets->getStatusCount("open", $this->staff_id, $client->id),
 			'awaiting_reply' => $this->SupportManagerproTickets->getStatusCount("awaiting_reply", $this->staff_id, $client->id),
 			'in_progress' => $this->SupportManagerproTickets->getStatusCount("in_progress", $this->staff_id, $client->id),
-			'closed' => $this->SupportManagerproTickets->getStatusCount("closed", $this->staff_id, $client->id),
-			'spam' => $this->SupportManagerproTickets->getStatusCount("spam", $this->staff_id, $client->id),
-			'deleted' => $this->SupportManagerproTickets->getStatusCount("deleted", $this->staff_id, $client->id)
+			'closed' => $this->SupportManagerproTickets->getStatusCount("closed", $this->staff_id, $client->id)
 		);
 		
 		$status = (isset($this->get[1]) ? $this->get[1] : "open");
@@ -247,9 +206,7 @@ class AdminTickets extends SupportManagerproController {
 		echo $this->SupportManagerproTickets->getStatusCount($status, $this->staff_id, $client_id);
 		return false;
 	}
-
-
-
+	
 	/**
 	 * Add a ticket
 	 */
@@ -266,7 +223,7 @@ class AdminTickets extends SupportManagerproController {
 		
 		$please_select = array('' => Language::_("AppController.select.please", true));
 		$department_staff = array('' => Language::_("AdminTickets.text.unassigned", true));
-
+		
 		if (!empty($this->post)) {
 			$data = $this->post;
 			// Set staff ticket is assigned to
@@ -276,7 +233,7 @@ class AdminTickets extends SupportManagerproController {
 			// Set the client ID if not passed in by POST
 			if (!isset($data['client_id']))
 				$data['client_id'] = $client_id;
-
+			
 			// Create a transaction
 			$this->SupportManagerproTickets->begin();
 			
@@ -319,7 +276,9 @@ class AdminTickets extends SupportManagerproController {
 				$hostname = isset(Configure::get("Blesta.company")->hostname) ? Configure::get("Blesta.company")->hostname : "";
 				
 				// Send the email associated with this ticket
-				$additional_tags = array('SupportManagerpro.ticket_updated' => array('update_ticket_url' => $this->Html->safe($hostname . $this->client_uri . "plugin/support_managerpro/client_tickets/reply/" . $ticket->id . "/")));
+				$key = mt_rand();
+				$hash = $this->SupportManagerproTickets->generateReplyHash($ticket->id, $key);
+				$additional_tags = array('SupportManagerpro.ticket_updated' => array('update_ticket_url' => $this->Html->safe($hostname . $this->client_uri . "plugin/support_managerpro/client_tickets/reply/" . $ticket->id . "/?sid=" . rawurlencode($this->SupportManagerproTickets->systemEncrypt('h=' . substr($hash, -16) . "|k=" . $key)))));
 				$this->SupportManagerproTickets->sendEmail($reply_id, $additional_tags);
 				
 				$this->flashMessage("message", Language::_("AdminTickets.!success.ticket_created", true, $ticket->code), null, false);
@@ -386,7 +345,9 @@ class AdminTickets extends SupportManagerproController {
 				$hostname = isset(Configure::get("Blesta.company")->hostname) ? Configure::get("Blesta.company")->hostname : "";
 				
 				// Send the email associated with this ticket
-				$additional_tags = array('SupportManagerpro.ticket_updated' => array('update_ticket_url' => $this->Html->safe($hostname . $this->client_uri . "plugin/support_managerpro/client_tickets/reply/" . $ticket->id . "/")));
+				$key = mt_rand();
+				$hash = $this->SupportManagerproTickets->generateReplyHash($ticket->id, $key);
+				$additional_tags = array('SupportManagerpro.ticket_updated' => array('update_ticket_url' => $this->Html->safe($hostname . $this->client_uri . "plugin/support_managerpro/client_tickets/reply/" . $ticket->id . "/?sid=" . rawurlencode($this->SupportManagerproTickets->systemEncrypt('h=' . substr($hash, -16) . "|k=" . $key)))));
 				$this->SupportManagerproTickets->sendEmail($reply_id, $additional_tags);
 				
 				$this->flashMessage("message", Language::_("AdminTickets.!success.ticket_updated", true, $ticket->code), null, false);
@@ -412,7 +373,7 @@ class AdminTickets extends SupportManagerproController {
 		// Set the client this ticket belongs to
 		if (!empty($ticket->client_id))
 			$this->set("client", $this->Clients->get($ticket->client_id, false));
-		
+
 		$please_select = array('' => Language::_("AppController.select.please", true));
 		$departments = $please_select + $this->Form->collapseObjectArray($this->SupportManagerproDepartments->getAll($this->company_id), "name", "id");
 		
@@ -434,6 +395,7 @@ class AdminTickets extends SupportManagerproController {
 			}
 		}
 		$this->set("staff_settings", $staff_settings);
+		$this->set("ticket_actions", $this->getReplyActions());
 		
 		// Set the page title
 		$this->structure->set("page_title", Language::_("AdminTickets.reply.page_title", true, $ticket->code));
@@ -455,6 +417,41 @@ class AdminTickets extends SupportManagerproController {
 		$clients = $this->Form->collapseObjectArray($this->Clients->search($search), array("id_code", "first_name", "last_name"), "id", " ");
 		
 		echo $this->Json->encode(array('clients' => $clients));
+		return false;
+	}
+	
+	/**
+	 * AJAX Fetch non-closed tickets
+	 * @see AdminTickets::add()
+	 */
+	public function searchByCode() {
+		// Ensure there is post data
+		if (!$this->isAjax() || empty($this->post['search'])) {
+			header($this->server_protocol . " 401 Unauthorized");
+			exit();
+		}
+		
+		$this->uses(array("Clients"));
+		
+		// Find matching tickets
+		$search = $this->post['search'];
+        $page = 1;
+		$tickets = $this->SupportManagerproTickets->searchByCode($search, $this->staff_id, "not_closed", $page, array('code' => "desc"));
+		
+		// Fetch the client name for each ticket
+		$clients = array();
+		foreach ($tickets as &$ticket) {
+			if (!empty($ticket->client_id) && !isset($clients[$ticket->client_id]))
+				$clients[$ticket->client_id] = $this->Clients->get($ticket->client_id, false);
+			
+			$ticket->display_name = Language::_("AdminTickets.index.ticket_email", true, $ticket->code, $ticket->email);
+			if (!empty($clients[$ticket->client_id]))
+				$ticket->display_name = Language::_("AdminTickets.index.ticket_name", true, $ticket->code, $clients[$ticket->client_id]->first_name, $clients[$ticket->client_id]->last_name);
+		}
+        
+        $tickets = $this->Form->collapseObjectArray($tickets, array("display_name"), "id", " ");
+        
+		echo $this->Json->encode(array('tickets' => $tickets));
 		return false;
 	}
 	
@@ -500,6 +497,118 @@ class AdminTickets extends SupportManagerproController {
 		
 		if ($this->isAjax())
 			return $this->renderAjaxWidgetIfAsync(isset($this->post['search']) ? null : (isset($this->get['search']) || isset($this->get['sort'])));
+	}
+	
+	/**
+	 * Performs a given ticket action
+	 */
+	public function action() {
+		// Ensure a valid action was given
+		if (empty($this->post['action']) || !in_array($this->post['action'], array_keys($this->getTicketActions())))
+			$this->redirect($this->base_uri . "plugin/support_managerpro/admin_tickets/");
+		
+		switch ($this->post['action']) {
+			case "merge":
+                if (!empty($this->post['tickets']) && !empty($this->post['tickets'][1])) {
+                    $this->SupportManagerproTickets->merge((array)$this->post['tickets']);
+
+                    if (($errors = $this->SupportManagerproTickets->errors())) {
+                        // Error
+                        $this->flashMessage("error", $errors, null, false);
+                    }
+                    else {
+                        // Success
+                        $this->flashMessage("message", Language::_("AdminTickets.!success.ticket_merge", true), null, false);
+                    }
+                }
+				break;
+            case "update_status":
+                $ticket_statuses = $this->SupportManagerproTickets->getStatuses();
+
+                if (!empty($this->post['tickets']) && !empty($this->post['status']) && array_key_exists($this->post['status'], $ticket_statuses)) {
+                    // Update the select tickets to the new status
+                    $this->SupportManagerproTickets->editMultiple((array)$this->post['tickets'], array('by_staff_id' => $this->staff_id, 'status' => $this->post['status']));
+
+                    if (($errors = $this->SupportManagerproTickets->errors())) {
+                        // Error
+                        $this->flashMessage("error", $errors, null, false);
+                    }
+                    else {
+                        // Success
+                        $this->flashMessage("message", Language::_("AdminTickets.!success.ticket_update_status", true), null, false);
+                    }
+                }
+                break;
+            case "permanent_delete":
+                $ticket_statuses = $this->SupportManagerproTickets->getStatuses();
+
+                if (!empty($this->post['tickets'])) {
+                    // Permanent Delete the select tickets
+                    $this->SupportManagerproTickets->DeleteTickets((array)$this->post['tickets'], array('by_staff_id' => $this->staff_id, 'status' => $this->post['status']));
+
+                    if (($errors = $this->SupportManagerproTickets->errors())) {
+                        // Error
+                        $this->flashMessage("error", $errors, null, false);
+                    }
+                    else {
+                        // Success
+                        $this->flashMessage("message", Language::_("AdminTickets.!success.ticket_deleted", true), null, false);
+                    }
+                }
+                break;
+		}
+		
+		$this->redirect($this->base_uri . "plugin/support_managerpro/admin_tickets/");
+	}
+	
+	/**
+	 * Performs a given action
+	 */
+	public function replyAction() {
+		// Ensure valid ticket was given
+		if (!isset($this->get[0]) || !($ticket = $this->SupportManagerproTickets->get($this->get[0], true, null, $this->staff_id)) ||
+			empty($this->post['action']) || !in_array($this->post['action'], array_keys($this->getReplyActions())))
+			$this->redirect($this->base_uri . "plugin/support_managerpro/admin_tickets/");
+		
+		// Perform the requested action
+		switch ($this->post['action']) {
+			case "split":
+				// Split the ticket
+				$replies = (isset($this->post['replies']) ? $this->post['replies'] : array());
+				$new_ticket_id = $this->SupportManagerproTickets->split($ticket->id, $replies);
+
+				if (($errors = $this->SupportManagerproTickets->errors())) {
+					// Error
+					$this->flashMessage("error", $errors, null, false);
+					$this->redirect($this->base_uri . "plugin/support_managerpro/admin_tickets/reply/" . $ticket->id . "/");
+				}
+				else {
+					// Success
+					$new_ticket = $this->SupportManagerproTickets->get($new_ticket_id, false);
+					$this->flashMessage("message", Language::_("AdminTickets.!success.ticket_split", true, $ticket->code, ($new_ticket ? $new_ticket->code : "")), null, false);
+					$this->redirect($this->base_uri . "plugin/support_managerpro/admin_tickets/reply/" . $new_ticket->id . "/");
+				}
+				break;
+			case "permanent_delete":
+				// Permanent delete reply
+				$replies = (isset($this->post['replies']) ? $this->post['replies'] : array());
+				$new_ticket_id = $this->SupportManagerproTickets->DeleteReply($replies);
+
+				if (($errors = $this->SupportManagerproTickets->errors())) {
+					// Error
+					$this->flashMessage("error", $errors, null, false);
+					$this->redirect($this->base_uri . "plugin/support_managerpro/admin_tickets/reply/" . $ticket->id . "/");
+				}
+				else {
+					// Success
+					$new_ticket = $this->SupportManagerproTickets->get($new_ticket_id, false);
+					$this->flashMessage("message", Language::_("AdminTickets.!success.reply_deleted", true), null, false);
+					$this->redirect($this->base_uri . "plugin/support_managerpro/admin_tickets/reply/" . $ticket->id. "/");
+				}
+				break;
+		}
+		
+		$this->redirect($this->base_uri . "plugin/support_managerpro/admin_tickets/reply/" . $ticket->id . "/");
 	}
 	
 	/**

@@ -4,21 +4,19 @@
 			array('name'=>$this->_("AdminTickets.client.category_open", true) . " <span>(" . $this->Html->_($status_count['open'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "open" ? true : false), 'attributes'=>array('href'=>$this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/client/" . $this->Html->ifSet($client->id) . "/open/"), 'class'=>"ajax")),
 			array('name'=>$this->_("AdminTickets.client.category_awaiting_reply", true) . " <span>(" . $this->Html->_($status_count['awaiting_reply'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "awaiting_reply" ? true : false), 'attributes'=>array('href'=>$this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/client/" . $this->Html->ifSet($client->id) . "/awaiting_reply/"), 'class'=>"ajax")),
 			array('name'=>$this->_("AdminTickets.client.category_in_progress", true) . " <span>(" . $this->Html->_($status_count['in_progress'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "in_progress" ? true : false), 'attributes'=>array('href'=>$this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/client/" . $this->Html->ifSet($client->id) . "/in_progress/"), 'class'=>"ajax")),
-			array('name'=>$this->_("AdminTickets.client.category_closed", true) . " <span>(" . $this->Html->_($status_count['closed'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "closed" ? true : false), 'attributes'=>array('href'=>$this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/client/" . $this->Html->ifSet($client->id) . "/closed/"), 'class'=>"ajax")),
-			array('name'=>$this->_("AdminTickets.client.category_spam", true) . " <span>(" . $this->Html->_($status_count['spam'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "spam" ? true : false), 'attributes'=>array('href'=>$this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/client/" . $this->Html->ifSet($client->id) . "/spam/"), 'class'=>"ajax")),
-			array('name'=>$this->_("AdminTickets.client.category_deleted", true) . " <span>(" . $this->Html->_($status_count['deleted'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "deleted" ? true : false), 'attributes'=>array('href'=>$this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/client/" . $this->Html->ifSet($client->id) . "/deleted/"), 'class'=>"ajax"))
+			array('name'=>$this->_("AdminTickets.client.category_closed", true) . " <span>(" . $this->Html->_($status_count['closed'], true) . ")</span>", 'current'=>($this->Html->ifSet($status) == "closed" ? true : false), 'attributes'=>array('href'=>$this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/client/" . $this->Html->ifSet($client->id) . "/closed/"), 'class'=>"ajax"))
 		);
 		$link_buttons = array(
 			array('name'=>$this->_("AdminTickets.client.categorylink_createticket", true), 'attributes'=>array("href"=>$this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/add/" . $this->Html->ifSet($client->id) . "/")))
 		);
-
+		
 		$this->Widget->clear();
 		$this->Widget->setLinks($links);
 		$this->Widget->setLinkButtons($link_buttons);
 		$this->Widget->setWidgetButton("arrow");
 		$this->Widget->setBadgeUri($this->base_uri . "plugin/support_managerpro/admin_tickets/clientticketcount/" . $this->Html->_($client->id, true) . "/" . $this->Html->_($status, true));
 		$this->Widget->create($this->_("AdminTickets.client.boxtitle_tickets", true), array('id'=>"plugin_support_managerpro_admin_tickets_client"), $this->Html->ifSet($render_section, null));
-
+		
 		if ($this->Html->ifSet($tickets, false) && ($num_tickets = count($tickets)) > 0) {
 		?>
 		<table class="table" id="tickets">
@@ -43,9 +41,8 @@
 				<td><?php $this->Html->_($ticket->department_name);?></td>
 				<td>
 				<?php
-					$summary = $this->Html->ifSet($ticket->summary);
-					$truncate = (strlen($summary) > Configure::get("SupportManagerpro.summary_truncate_length"));
-					echo substr($this->Html->_($summary, true), 0, Configure::get("SupportManagerpro.summary_truncate_length")) . ($truncate ? "..." : "");
+                    $summary = $string->truncate($this->Html->ifSet($ticket->summary), array('word_length' => Configure::get("SupportManagerpro.summary_truncate_length")));
+                    echo $this->Html->_($summary, true) . ($summary != $this->Html->ifSet($ticket->summary) ? "..." : "");
 				?>
 				</td>
 				<td class="last"><?php $this->Html->_($ticket->last_reply_time);?></td>

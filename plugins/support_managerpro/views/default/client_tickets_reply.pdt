@@ -1,171 +1,181 @@
 
 				<?php
+				// Don't show this container when only rendering the widget section
+				if (!$this->Html->ifSet($render_section)) {
+				?>
+			<div class="col-md-12">
+				<?php
+				}
 				echo $this->Html->ifSet($message);
 				
 				$this->WidgetClient->clear();
-				$this->WidgetClient->renderSubHead(false);
 				$this->WidgetClient->setStyleSheet($this->view_dir . "css/styles.css", array('id' => "support_managerpro_styles"));
-				$this->WidgetClient->create($this->_("ClientTickets.reply.boxtitle_reply", true, $this->Html->ifSet($ticket->code)));
+				$this->WidgetClient->create($this->_("ClientTickets.reply.boxtitle_reply", true, $this->Html->ifSet($ticket->code)), array('id' => "client_ticket_reply"));
+				$this->WidgetClient->startBody();
 				
-				$this->Form->create(null, array('id' => "create_ticket", 'enctype' => "multipart/form-data"));
+				$priority_class = $this->Html->ifSet($priority_classes[$this->Html->ifSet($ticket->priority)]);
+				if (empty($priority_class))
+					$priority_class = "default";
 				?>
-				
-				<div class="heading first">
-					<h5><?php $this->_("ClientTickets.reply.heading_summary");?></h5>
-				</div>
-				
-				<div class="pad">
-					<div class="summary">
+				<div class="row info-box">
+					<div class="col-md-12">
+						<label><?php $this->_("ClientTickets.reply.heading_summary");?></label>
 						<p><?php $this->Html->_($ticket->summary);?></p>
+						<hr />
 					</div>
-					<div class="ticket-details">
-						<div class="table_sec">
-							<table>
-								<tr class="head">
-									<td><?php $this->_("ClientTickets.reply.heading_department");?></td>
-									<td><?php $this->_("ClientTickets.reply.heading_priority");?></td>
-									<td><?php $this->_("ClientTickets.reply.heading_status");?></td>
-									<td><?php $this->_("ClientTickets.reply.heading_date_added");?></td>
-								</tr>
-								<tr>
-									<td><?php $this->Html->_($ticket->department_name);?></td>
-									<td><?php echo $this->Html->ifSet($priorities[$ticket->priority])?></td>
-									<td><?php echo $this->Html->ifSet($statuses[$ticket->status]);?></td>
-									<td><?php echo $this->Date->cast($this->Html->ifSet($ticket->date_added), "date_time");?></td>
-								</tr>
-							</table>
-						</div>
+					<div class="col-md-3">
+						<label><?php $this->_("ClientTickets.reply.heading_department");?></label>
+						<p><?php $this->Html->_($ticket->department_name);?></p>
 					</div>
-				</div>
-				
-				<div class="pad">
-					<div class="add-reply">
-						<h3><?php $this->_("ClientTickets.reply.heading_reply");?></h3>
-						<ul>
-							<li>
-								<?php
-								$this->Form->label($this->_("ClientTickets.reply.field_details", true), "details");
-								$this->Form->fieldTextarea("details", $this->Html->ifSet($vars->details), array('id' => "details"));
-								?>
-							</li>
-							<li id="file_attachment">
-								<?php
-								$this->Form->label($this->_("ClientTickets.reply.field_attachments", true), "attachment[]");
-								$this->Form->fieldFile("attachment[]");
-								?>
-							</li>
-							<li id="add_attachment_field">
-								<a class="add_icon" href="#"><span><?php $this->_("ClientTickets.reply.text_add_attachment");?></span></a>
-							</li>
-						</ul>
+					<div class="col-md-3">
+						<label><?php $this->_("ClientTickets.reply.heading_priority");?></label>
+						<p><span class="label label-<?php $this->Html->_($priority_class);?>"><?php echo $this->Html->ifSet($priorities[$ticket->priority])?></span></p>
+					</div>
+					<div class="col-md-3">
+						<label><?php $this->_("ClientTickets.reply.heading_status");?></label>
+						<p><?php echo $this->Html->ifSet($statuses[$ticket->status]);?></p>
+					</div>
+					<div class="col-md-3">
+						<label><?php $this->_("ClientTickets.reply.heading_date_added");?></label>
+						<p><?php echo $this->Date->cast($this->Html->ifSet($ticket->date_added), "date_time");?></p>
 					</div>
 				</div>
 				
-				<div class="button_row">
-					<div class="btn submit right_btn">
-						<a class="submit" href="#"><?php $this->_("ClientTickets.reply.field_replysubmit");?></a>
-					</div>
-				</div>
 				<?php
-				$this->Form->end();
+				$this->Form->create(null, array('id' => "create_ticket", 'enctype' => "multipart/form-data"));
+				if ($this->Html->ifSet($sid))
+					$this->Form->fieldHidden("sid", $this->Html->ifSet($sid));
 				?>
-				<div class="clear"></div>
-				
-				<div class="pad">
+				<div class="form-group">
+					<label for="details" id="details"><?php $this->_("ClientTickets.reply.heading_reply");?></label>
+					<textarea class="form-control" rows="5" name="details" id="details" placeholder="<?php $this->_("ClientTickets.reply.placeholder_reply");?>"></textarea>
+				</div>
+				<div id="file_attachment" class="form-group">
 					<?php
-					foreach ($this->Html->ifSet($ticket->replies, array()) as $reply) {
-						if ($this->Html->ifSet($reply->staff_id) != "") {
-							$first_name = $this->Html->ifSet($reply->first_name, $this->_("ClientTickets.reply.system", true));
-							$last_name = $this->Html->ifSet($reply->last_name);							
-						}
-						else {
-							$first_name = $this->Html->ifSet($reply->first_name, $ticket->email);
-							$last_name = $this->Html->ifSet($reply->last_name);
-						}
-						$first_name = $this->Html->safe($first_name);
-						$last_name = $this->Html->safe($last_name);
+					$this->Form->label($this->_("ClientTickets.reply.field_attachments", true), "attachment[]");
+					$this->Form->fieldFile("attachment[]", array('class' => "martop5"));
 					?>
-					<div class="<?php $this->Html->_($reply->type);?>">
-						<?php
-						if ($this->Html->ifSet($reply->type) == "reply") {
-						?>
-						<div class="topbar<?php echo ($this->Html->ifSet($reply->staff_id) != "" ? " staff" : "");?>">
-							<p>
-							<?php
-							$this->_("ClientTickets.reply.reply_date", false, $this->Date->cast($this->Html->ifSet($reply->date_added), Configure::get("SupportManagerpro.reply_date_format")), $first_name, $last_name);
-							?>
-							</p>
-						</div>
-						<div class="left">
-							<div>
-								<img src="//www.gravatar.com/avatar/<?php echo md5(strtolower(trim($this->Html->_($reply->email, true))));?>?s=120" />
-							</div>
-							<p class="name">
-							<?php
-								echo $this->Html->concat(" ", $first_name, $last_name);
-							?>
-							</p>
-							<?php
-							if ($this->Html->ifSet($reply->staff_id) != "") {
-								$staff_title = $this->_("ClientTickets.reply.staff_title", true);
-								if ($this->Html->ifSet($staff_settings[$reply->staff_id], false) && !empty($staff_settings[$reply->staff_id]['title']))
-									$staff_title = $this->Html->safe($staff_settings[$reply->staff_id]['title']);
-							?>
-							<p class="title"><?php echo $staff_title;?></p>
-							<?php
-							}
-							?>
-						</div>
-						<div class="right">
-							<?php
-							// Show attachments
-							if (!empty($reply->attachments)) {
-							?>
-							<div class="attachments">
-								<?php
-								foreach ($reply->attachments as $attachment) {
-								?>
-								<p><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/client_tickets/getattachment/" . $this->Html->ifSet($attachment->id) . "/");?>"><?php $this->Html->_($attachment->name);?></a></p>
-								<?php
-								}
-								?>
-							</div>
-							<?php
-							}
-							?>
-							<div class="response">
-								<?php echo nl2br($this->Html->_($reply->details, true));?>
-							</div>
-						</div>
-						<div class="clear"></div>
-						<?php
-						}
-						elseif ($this->Html->ifSet($reply->type) == "log") {
-						?>
-						<p>
-							<?php $this->Html->_($reply->details);?>
-							<em><?php $this->_("ClientTickets.reply.log_date", false, $this->Date->cast($this->Html->ifSet($reply->date_added), Configure::get("SupportManagerpro.reply_date_format")), $first_name, $last_name);?></em>
-						</p>
-						<?php
-						}
-						?>
-					</div>
+				</div>
+				<a href="#" id="add_attachment_field"><i class="fa fa-plus-circle"></i> <?php $this->_("ClientTickets.reply.text_add_attachment");?></a>
+				<div class="btn-group pull-right">
+					<button type="submit" class="btn btn-default" value="reply"><i class="fa fa-reply"></i> <?php $this->_("ClientTickets.reply.field_replysubmit");?></button>
+					<?php
+					$this->Form->fieldHidden("action_type", "reply", array('id' => "action_type"));
+					if ($this->Html->ifSet($ticket->status) != "closed") {
+					?>
+					<button type="submit" class="btn btn-danger" value="close" rel="<?php echo $this->Html->safe($this->_("ClientTickets.reply.confirm_close", true));?>">
+						<i class="fa fa-ban fa-fw"></i> <?php $this->_("ClientTickets.reply.field_closesubmit");?>
+					</button>
 					<?php
 					}
 					?>
 				</div>
 				<?php
-				$this->WidgetClient->end();
+				$this->Form->end();
 				?>
-
-<?php
+				<div class="clearfix"></div>
+				<hr />
+				<?php
+				foreach ($this->Html->ifSet($ticket->replies, array()) as $reply) {
+					if ($this->Html->ifSet($reply->staff_id) != "") {
+						$first_name = $this->Html->ifSet($reply->first_name, $this->_("ClientTickets.reply.system", true));
+						$last_name = $this->Html->ifSet($reply->last_name);							
+					}
+					else {
+						$first_name = $this->Html->ifSet($reply->first_name, $ticket->email);
+						$last_name = $this->Html->ifSet($reply->last_name);
+					}
+					$first_name = $this->Html->safe($first_name);
+					$last_name = $this->Html->safe($last_name);
+				
+					if ($this->Html->ifSet($reply->type) == "reply") {
+				?>
+				<div class="row ticket-reply">
+					<div class="col-md-12 top-bar<?php echo ($this->Html->ifSet($reply->staff_id) != "" ? " staff-reply" : "");?>">
+						<p><?php $this->_("ClientTickets.reply.reply_date", false, $this->Date->cast($this->Html->ifSet($reply->date_added), Configure::get("SupportManagerpro.reply_date_format")), $first_name, $last_name);?></p>
+					</div>
+					<div class="col-md-2 col-xs-3 replier">
+						<img src="//www.gravatar.com/avatar/<?php echo md5(strtolower(trim($this->Html->_($reply->email, true))));?>?s=250" class="img-thumbnail img-responsive" />
+						<p class="text-center">
+							<strong><?php echo $this->Html->concat(" ", $first_name, $last_name);?></strong>
+							<?php
+							if ($this->Html->ifSet($reply->staff_id) != "" && $this->Html->ifSet($reply->staff_id) != 0) {
+								$staff_title = $this->_("ClientTickets.reply.staff_title", true);
+								if ($this->Html->ifSet($staff_settings[$reply->staff_id], false) && !empty($staff_settings[$reply->staff_id]['title']))
+									$staff_title = $this->Html->safe($staff_settings[$reply->staff_id]['title']);
+							?>
+							<br />
+							<small><?php echo $staff_title;?></small>
+							<?php
+							}
+							?>
+						</p>
+					</div>
+					<div class="col-md-10 col-xs-9 response">
+						<?php
+						// Show attachments
+						if (!empty($reply->attachments)) {
+						?>
+						<div class="attachments">
+							<p>
+								<?php
+								foreach ($reply->attachments as $attachment) {
+								?>
+								<span><a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/client_tickets/getattachment/" . $this->Html->ifSet($attachment->id) . "/" . ($this->Html->ifSet($sid) ? "?sid=" . rawurlencode($this->Html->ifSet($sid)) : ""));?>"><i class="fa fa-paperclip"></i> <?php $this->Html->_($attachment->name);?></a></span>
+								<?php
+								}
+								?>
+							</p>
+						</div>
+						<hr />
+						<?php
+						}
+						
+						echo $this->TextParser->encode("markdown", $this->Html->_($reply->details, true));
+						?>
+					</div>
+				</div>
+				<?php
+					}
+					elseif ($this->Html->ifSet($reply->type) == "log") {
+					?>
+				<div class="col-md-12 marbot10">
+					<div class="alert alert-info">
+						<p>
+							<?php $this->Html->_($reply->details);?>
+							<em><?php $this->_("ClientTickets.reply.log_date", false, $this->Date->cast($this->Html->ifSet($reply->date_added), Configure::get("SupportManagerpro.reply_date_format")), $first_name, $last_name);?></em>
+						</p>
+					</div>
+				</div>
+					<?php
+					}
+				}
+				$this->WidgetClient->endBody();
+				$this->WidgetClient->end();
+				
+				// Don't show this container when only rendering the widget section
+				if (!$this->Html->ifSet($render_section)) {
+				?>
+			</div>
+				<?php
+				}
 $this->Javascript->setInline("
 	$(document).ready(function() {
-		$('#add_attachment_field a').click(function() {
-			var attachment = $('#file_attachment input').clone();
+		$('#add_attachment_field').click(function() {
+			var attachment = $('#file_attachment input:first').clone();
 			$(attachment).val('');
-			$('<li></li>').insertAfter($('#file_attachment')).html($(attachment));
+			$(attachment).insertAfter($('#file_attachment input:last'));
 			return false;
+		});
+		
+		// Handle confirmation on delete action
+		$('#client_ticket_reply button[rel]').blestaModalConfirm({
+			base_url: '" . $this->base_uri . "',
+			submit: true
+		});
+		
+		$('button[type=\"submit\"]').click(function() {
+			$('#action_type').val($(this).val());
 		});
 	});
 ");

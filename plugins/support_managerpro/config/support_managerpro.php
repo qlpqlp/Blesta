@@ -6,7 +6,7 @@ Configure::set("SupportManagerpro.auto_refresh", "30");
 Configure::set("SupportManagerpro.time_format", "H:i:s");
 Configure::set("SupportManagerpro.reply_date_format", "M j Y g:i A");
 
-// Summary truncate length (max number of characters)
+// Summary truncate length (max number of words)
 Configure::set("SupportManagerpro.summary_truncate_length", 40);
 // Default summary if blank
 Configure::set("SupportManagerpro.summary_default", "N/A");
@@ -40,7 +40,7 @@ Configure::set("SupportManagerpro.install.emails", array(
 
 --
 
-To reply to this ticket, be sure to email {ticket.department_email} from the address we sent this notice to. If you are a client, you may also update the ticket in our support area at {update_ticket_url}.",
+To reply to this ticket, be sure to email {ticket.department_email} from the address we sent this notice to. You may also update the ticket in our support area at {update_ticket_url}.",
 		'html' => "<p>
 	{ticket.details_html}</p>
 <p>
@@ -48,7 +48,7 @@ To reply to this ticket, be sure to email {ticket.department_email} from the add
 <p>
 	--</p>
 <p>
-	To reply to this ticket, be sure to email <a href=\"mailto:{ticket.department_email}\">{ticket.department_email}</a> from the address we sent this notice to. If you are a client, you may also update the ticket in our support area at <a href=\"http://{update_ticket_url}\">{update_ticket_url}</a>.</p>
+	To reply to this ticket, be sure to email <a href=\"mailto:{ticket.department_email}\">{ticket.department_email}</a> from the address we sent this notice to. You may also update the ticket in our support area at <a href=\"http://{update_ticket_url}\">{update_ticket_url}</a>.</p>
 "
 	),
 	array(

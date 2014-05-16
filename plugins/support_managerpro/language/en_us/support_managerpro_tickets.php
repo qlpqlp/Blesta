@@ -21,6 +21,17 @@ $lang['SupportManagerproTickets.!error.details.empty'] = "Please enter some deta
 $lang['SupportManagerproTickets.!error.ticket_id.exists'] = "Invalid ticket ID.";
 $lang['SupportManagerproTickets.!error.client_id.attached_to'] = "The ticket reply may not be from a different client.";
 
+$lang['SupportManagerproTickets.!error.replies.valid'] = "At least one ticket reply ID is invalid, or all replies have been selected. You must leave at least one reply remaining.";
+$lang['SupportManagerproTickets.!error.tickets.valid'] = "At least one ticket selected is invalid, closed, or does not belong to the same client as the chosen ticket.";
+$lang['SupportManagerproTickets.!error.merge_into.itself'] = "The ticket may not be merged with itself.";
+
+$lang['SupportManagerproTickets.!error.tickets.service_matches'] = "At least one of the tickets could not be assigned to the given service because it does not belong to the associated client.";
+$lang['SupportManagerproTickets.!error.tickets.department_matches'] = "At least one of the tickets could not be assigned to the given department because it does not belong to the same company.";
+
+
+// Replies
+$lang['SupportManagerproTickets.merge.reply'] = "This ticket has been merged into ticket #%1\$s."; // %1$s is the ticket number
+
 
 // Priorities
 $lang['SupportManagerproTickets.priority.emergency'] = "Emergency";
@@ -36,7 +47,8 @@ $lang['SupportManagerproTickets.status.awaiting_reply'] = "Awaiting Reply";
 $lang['SupportManagerproTickets.status.in_progress'] = "In Progress";
 $lang['SupportManagerproTickets.status.closed'] = "Closed";
 $lang['SupportManagerproTickets.status.spam'] = "Spam";
-$lang['SupportManagerproTickets.status.deleted'] = "Deleted";
+$lang['SupportManagerproTickets.status.deleted'] = "Delete";
+$lang['SupportManagerproTickets.status.pdelete'] = "Permanent Delete";
 
 
 // Reply types

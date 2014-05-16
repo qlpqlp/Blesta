@@ -5,6 +5,8 @@ $lang['SupportManagerproPlugin.name'] = "Support Manager Pro";
 // Cron tasks
 $lang['SupportManagerproPlugin.cron.poll_ticketspro_name'] = "Download Tickets";
 $lang['SupportManagerproPlugin.cron.poll_ticketspro_desc'] = "Connects to the POP3/IMAP server to download emails and convert them into tickets.";
+$lang['SupportManagerproPlugin.cron.close_ticketspro_name'] = "Close Tickets";
+$lang['SupportManagerproPlugin.cron.close_ticketspro_desc'] = "Automatically closes open tickets as configured for departments in the Support Managerpro.";
 
 // Plugin actions
 $lang['SupportManagerproPlugin.nav_primary_client.main'] = "Support Pro";

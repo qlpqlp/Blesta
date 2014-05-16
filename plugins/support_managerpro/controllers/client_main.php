@@ -1,6 +1,6 @@
 <?php
 /**
- * Support Manager Client Main controller
+ * Support Managerpro Client Main controller
  * 
  * @package blesta
  * @subpackage blesta.plugins.support_managerpro

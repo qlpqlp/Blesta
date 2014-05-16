@@ -63,10 +63,8 @@
 							<td class="last">
 								<?php
 								// Set department description
-								$description = $this->Html->_($department->description, true);
-								if (strlen($description) > 40)
-									$description = substr($description, 0, 40) . "...";
-								echo $description;
+                                $description = $string->truncate($this->Html->ifSet($department->description), array('word_length' => Configure::get("SupportManagerpro.summary_truncate_length")));
+                                echo $this->Html->_($description, true) . ($description != $this->Html->ifSet($department->description) ? "..." : "");
 								?>
 							</td>
 						</tr>

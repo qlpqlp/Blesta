@@ -22,6 +22,8 @@ $lang['SupportManagerproDepartments.!error.mark_messages.format'] = "Please sele
 $lang['SupportManagerproDepartments.!error.mark_messages.valid'] = "Messages using POP3 may only be marked as deleted.";
 $lang['SupportManagerproDepartments.!error.clients_only.format'] = "Whether to allow clients to open or reply to tickets must be set to 0 or 1.";
 $lang['SupportManagerproDepartments.!error.override_from_email.format'] = "Whether to allow this department's email address to be used as the from address in email templates must be set to 0 or 1.";
+$lang['SupportManagerproDepartments.!error.close_ticket_interval.format'] = "Please select a valid close ticket interval.";
+$lang['SupportManagerproDepartments.!error.response_id.format'] = "Please select a valid auto-close response.";
 $lang['SupportManagerproDepartments.!error.status.format'] = "Invalid status type.";
 $lang['SupportManagerproDepartments.!error.department_id.exists'] = "Invalid department ID.";
 
@@ -57,4 +59,9 @@ $lang['SupportManagerproDepartments.security_types.tls'] = "TLS";
 // Message types
 $lang['SupportManagerproDepartments.message_types.read'] = "Read";
 $lang['SupportManagerproDepartments.message_types.deleted'] = "Deleted";
+
+
+// Close Ticket Intervals
+$lang['SupportManagerproDepartments.ticket_intervals.day'] = "1 Day";
+$lang['SupportManagerproDepartments.ticket_intervals.days'] = "%1\$s Days"; // %1$s is the number of days
 ?>

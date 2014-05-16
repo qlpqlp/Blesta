@@ -1,6 +1,6 @@
 <?php
 /**
- * Support Manager ticket pipe controller
+ * Support Managerpro ticket pipe controller
  * 
  * @package blesta
  * @subpackage blesta.plugins.support_managerpro
@@ -24,18 +24,18 @@ class TicketPipe extends SupportManagerproController {
 		}
 		
 		Loader::load(PLUGINDIR . "support_managerpro" . DS . "vendors" . DS . "mime_mail_parser" . DS . "MimeMailParser.class.php");
-		$this->components(array("SupportManagerpro.TicketManager"));
+		$this->components(array("SupportManagerpro.TicketManagerpro"));
 		
 		$email = new MimeMailParser();
 		$email->setStream(STDIN);
-
+		
 		$options = array(
 			'is_cli' => $this->is_cli,
 			'client_uri' => $this->client_uri,
 			'admin_uri' => $this->admin_uri
 		);
-		$this->TicketManager->setOptions($options);
-		$this->TicketManager->processTicketFromEmail($email);
+		$this->TicketManagerpro->setOptions($options);
+		$this->TicketManagerpro->processTicketFromEmail($email);
 		return false;
 	}
 }

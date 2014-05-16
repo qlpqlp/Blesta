@@ -40,14 +40,14 @@ class EmailParser {
 	public function getAddress(MimeMailParser $email, $header) {
 		$addresses = array();
 		preg_match_all("/[\._a-zA-Z0-9-]+@[\._a-zA-Z0-9-]+/i", $email->getHeader($header), $matches);
-
+		
 		foreach ($matches as $match) {
 			if (isset($match[0]))
 				$addresses[] = $match[0];
 		}
 		return array_unique($addresses);
 	}
-
+	
 	/**
 	 * Fetches the text of an email, converts HTML to plain-text if no
 	 * plain-text given. Also converts encoding to UTF-8.
@@ -58,11 +58,11 @@ class EmailParser {
 	public function getText(MimeMailParser $email) {
 		
 		$text = $this->getBody($email, "text");
-
+		
 		if ($text == "") {
 			if (!class_exists("html2text"))
 				Loader::load(PLUGINDIR . "support_managerpro" . DS . "vendors" . DS . "html2text" . DS . "html2text.class.php");
-
+			
 			$html = $this->getBody($email, "html");
 			$html2text = new html2text($html);
 			unset($html);
@@ -72,7 +72,7 @@ class EmailParser {
 		
 		return $text;
 	}
-
+	
 	/**
 	 * Fetches the body section of a given email and converts its character encoding
 	 * to UTF-8 where necessary
@@ -89,13 +89,13 @@ class EmailParser {
 		foreach ($email->getMessageBodies($type) as $i => $body) {
 			if (isset($encodings[$i]['content-type']))
 				$charset = $this->getCharset($encodings[$i]['content-type']);
-
+			
 			if (strtoupper($charset) != "UTF-8")
 				$text .= $email->convertEncoding($body, $charset, "UTF-8");
 			else
 				$text .= $body;
 		}
-
+		
 		return $text;
 	}
 	
@@ -108,7 +108,7 @@ class EmailParser {
 	public function getSubject(MimeMailParser $email) {
 		return $email->getHeader('subject', "UTF-8");
 	}
-
+	
 	/**
 	 * Writes the email attachments to a temp directory and returns an array
 	 * containing all attachments saved in the same format as that provided by

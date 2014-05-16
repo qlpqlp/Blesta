@@ -10,15 +10,20 @@
  */
 class SupportManagerproTickets extends SupportManagerproModel {
 	
+    /**
+     * The system-level staff ID
+     */
+    private $system_staff_id = 0;
+
 	/**
 	 * Constructor
 	 */
 	public function __construct() {
 		parent::__construct();
-
+		
 		Language::loadLang("support_managerpro_tickets", null, PLUGINDIR . "support_managerpro" . DS . "language" . DS);
 	}
-
+	
 	/**
 	 * Adds a support ticket
 	 *
@@ -45,7 +50,7 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		
 		$vars['date_added'] = date("c");
 		$this->Input->setRules($this->getRules($vars, false, $require_email));
-		
+
 		if ($this->Input->validates($vars)) {
 			// Add the support ticket
 			$fields = array("code", "department_id", "staff_id", "service_id", "client_id",
@@ -68,9 +73,11 @@ class SupportManagerproTickets extends SupportManagerproModel {
 	 * 	- summary A brief title/summary of the ticket issue
 	 * 	- priority The ticket priority (i.e. "emergency", "critical", "high", "medium", "low")
 	 * 	- status The status of the ticket (i.e. "open", "awaiting_reply", "in_progress", "closed")
+	 * 	- by_staff_id The ID of the staff member performing the edit (optional, defaults to null to signify the edit is performed by the client)
+	 * @param boolean $log True to update the ticket for any loggable changes, false to explicitly not log changes (optional, default true)
 	 * @return stdClass An stdClass object representing the ticket (without replies)
 	 */
-	public function edit($ticket_id, array $vars) {
+	public function edit($ticket_id, array $vars, $log = true) {
 		$vars['ticket_id'] = $ticket_id;
 		
 		if (isset($vars['staff_id']) && $vars['staff_id'] == "")
@@ -96,12 +103,110 @@ class SupportManagerproTickets extends SupportManagerproModel {
 					$vars['date_closed'] = null;
 			}
 			
-			$this->Record->where("id", "=", $ticket_id)->
-				update("support_ticketspro", $vars, $fields);
-			
+            // Log any changes and update the ticket
+            if ($log) {
+                $log_vars = array('type' => "log", 'by_staff_id' => (isset($vars['by_staff_id']) ? $vars['by_staff_id'] : null));
+                
+                foreach (array("by_staff_id", "department_id", "summary", "priority", "status", "ticket_staff_id") as $field) {
+                    if (isset($vars[$field]))
+                        $log_vars[$field] = $vars[$field];
+                }
+
+                // Set the staff that updated the ticket
+                if (array_key_exists("by_staff_id", $log_vars)) {
+                    $log_vars['staff_id'] = $log_vars['by_staff_id'];
+                    unset($log_vars['by_staff_id']);
+                }
+                
+                $this->addReply($ticket_id, $log_vars);
+
+                // Adding the reply does not update client_id, nor service_id, so update those manually
+                $ticket_vars = array();
+                if (isset($vars['client_id']))
+                    $ticket_vars['client_id'] = $vars['client_id'];
+                if (isset($vars['service_id']))
+                    $ticket_vars['service_id'] = $vars['service_id'];
+
+                if (!empty($ticket_vars))
+                    $this->Record->where("id", "=", $ticket_id)->update("support_ticketspro", $ticket_vars, $fields);
+            }
+            else {
+                // Only update the ticket
+                $this->Record->where("id", "=", $ticket_id)->update("support_ticketspro", $vars, $fields);
+            }
+            
 			return $this->Record->get($ticket_id, false);
 		}
 	}
+
+    /**
+     * Updates multiple support tickets at once
+     * @see SupportManagerproTickets::edit()
+     *
+     * @param array $ticket_ids An array of ticket IDs to update
+     * @param array $vars An array consisting of arrays of ticket vars whose index refers to the index of the $ticket_ids array representing the vars of the specific ticket to update; or an array of vars to apply to all tickets; each including (all optional):
+     *  - department_id The department to reassign the ticket to
+	 * 	- staff_id The ID of the staff member to assign the ticket to
+	 * 	- service_id The ID of the client service this ticket relates to
+	 * 	- client_id The ID of the client this ticket is to be assigned to (can only be set if it is currently null)
+	 * 	- summary A brief title/summary of the ticket issue
+	 * 	- priority The ticket priority (i.e. "emergency", "critical", "high", "medium", "low")
+	 * 	- status The status of the ticket (i.e. "open", "awaiting_reply", "in_progress", "closed")
+	 * 	- by_staff_id The ID of the staff member performing the edit (optional, defaults to null to signify the edit is performed by the client)
+     */
+    public function editMultiple(array $ticket_ids, array $vars) {
+        // Determine whether to apply vars to all tickets, or whether each ticket has separate vars
+        $separate_vars = (isset($vars[0]) && is_array($vars[0]));
+
+        $rules = array(
+            'tickets' => array(
+                // Check whether the tickets can be assigned to the given service(s)
+                'service_matches' => array(
+                    'rule' => array(array($this, "validateServicesMatchTickets"), $ticket_ids),
+                    'message' => $this->_("SupportManagerproTickets.!error.tickets.service_matches")
+                ),
+                // Check whether the tickets can be assigned to the given department(s)
+                'department_matches' => array(
+                    'rule' => array(array($this, "validateDepartmentsMatchTickets"), $ticket_ids),
+                    'message' => $this->_("SupportManagerproTickets.!error.tickets.department_matches")
+                )
+            )
+        );
+        
+        $multiple_vars = array('tickets' => $vars);
+        
+        $this->Input->setRules($rules);
+        if ($this->Input->validates($multiple_vars)) {
+            // Validate each ticket individually
+            foreach ($ticket_ids as $key => $ticket_id) {
+                // Each ticket has separate vars
+                $temp_vars = $vars;
+                if ($separate_vars) {
+                    // Since all fields are optional, we don't need to require any vars be given for every ticket
+                    // and they will simply not be updated at all
+                    if (!isset($vars[$key]) || empty($vars[$key]))
+                        $vars[$key] = array();
+                    
+                    $temp_vars = $vars[$key];
+                }
+
+                // Validate an individual ticket
+                $temp_vars['ticket_id'] = $ticket_id;
+                $this->Input->setRules($this->getRules($temp_vars, true));
+                if (!$this->Input->validates($temp_vars))
+                    return;
+            }
+
+            // All validation passed, update all tickets accordingly
+            foreach ($ticket_ids as $key => $ticket_id) {
+                $temp_vars = $vars;
+                if ($separate_vars)
+                    $temp_vars = $vars[$key];
+                
+                $this->edit($ticket_id, $temp_vars);
+            }
+        }
+    }
 	
 	/**
 	 * Closes a ticket and logs that it has been closed
@@ -110,29 +215,68 @@ class SupportManagerproTickets extends SupportManagerproModel {
 	 * @param int $staff_id The ID of the staff that closed the ticket (optional, default null if client closed the ticket)
 	 */
 	public function close($ticket_id, $staff_id = null) {
-		// Set vars
-		$statuses = $this->getStatuses();
-		$vars = array(
-			'details' => Language::_("SupportManagerproTickets.log.status", true, $statuses['closed']),
-			'type' => "log"
-		);
-
-		// Begin a transaction
-		$this->Record->begin();
-
-		// Add the reply
-		$this->addReply($ticket_id, $vars);
-		$errors = $this->errors();
-
 		// Update the ticket to closed
-		$this->edit($ticket_id, array('status' => "closed", 'date_closed' => date("c")));
-		$edit_errors = $this->errors();
-		$errors = array_merge(($errors ? $errors : array()), ($edit_errors ? $edit_errors : array()));
+		$vars = array('status' => "closed", 'date_closed' => date("c"));
 
-		if ($errors)
-			$this->Record->rollBack();
-		else
-			$this->Record->commit();
+        // Set who closed the ticket
+		if ($staff_id !== null)
+			$vars['by_staff_id'] = $staff_id;
+
+        // Set the current assigned ticket staff member as the staff member on edit, so that it does not get removed
+        $ticket = $this->get($ticket_id, false);
+        if ($ticket)
+            $vars['staff_id'] = $ticket->staff_id;
+
+		$this->edit($ticket_id, $vars);
+	}
+	
+	/**
+	 * Closes all open tickets (not "in_progress") based on the department settings
+	 *
+	 * @param int $department_id The ID of the department whose tickets to close
+	 */
+	public function closeAllByDepartment($department_id) {
+		Loader::loadModels($this, array("Companies", "SupportManagerpro.SupportManagerproDepartments"));
+		
+		$department = $this->SupportManagerproDepartments->get($department_id);
+		if ($department && $department->close_ticket_interval !== null) {
+			$reply = "";
+			if ($department->response_id !== null) {
+				$response = $this->Record->select()->from("support_responsespro")->
+					where("id", "=", $department->response_id)->fetch();
+				$reply = ($response ? $response->details : "");
+			}
+			
+			$company = $this->Companies->get($department->company_id);
+			$hostname = isset($company->hostname) ? $company->hostname : "";
+			$last_reply_date = $this->dateToUtc(date("c", strtotime("-" . abs($department->close_ticket_interval) . " minutes")));
+			
+			$sub_query = $this->Record->select(array("MAX(support_repliespro.id)"))->from("support_repliespro")->
+				where("support_repliespro.ticket_id", "=", "support_ticketspro.id", false)->
+				where("support_repliespro.type", "=", "reply")->get();
+			$values = $this->Record->values;
+			$this->Record->reset();
+			
+			$tickets = $this->Record->select(array("support_ticketspro.id"))->
+				from("support_repliespro")->
+				innerJoin("support_ticketspro", "support_repliespro.ticket_id", "=", "support_ticketspro.id", false)->
+				appendValues($values)->
+				where("support_repliespro.id", "in", array($sub_query), false)->
+				where("support_ticketspro.department_id", "=", $department->id)->
+				where("support_ticketspro.status", "!=", "in_progress")->
+				where("support_ticketspro.status", "!=", "closed")->
+				where("support_repliespro.type", "=", "reply")->
+				where("support_repliespro.staff_id", "!=", null)->
+				where("support_repliespro.date_added", "<=", $last_reply_date)->
+				fetchAll();
+			
+			// Close the tickets
+			foreach ($tickets as $ticket) {
+                // Add any reply and email, and close the ticket
+                $this->staffReplyEmail($reply, $ticket->id, $hostname, $this->system_staff_id);
+				$this->close($ticket->id, $this->system_staff_id);
+			}
+		}
 	}
 	
 	/**
@@ -147,7 +291,7 @@ class SupportManagerproTickets extends SupportManagerproModel {
 	 * 	- staff_id The ID of the staff member this reply is from (optional)
 	 * 	- client_id The ID of the client this reply is from (optional)
 	 * 	- type The type of reply (i.e. "reply, "note", "log") (optional, default "reply")
-	 * 	- details The details of the ticket
+	 * 	- details The details of the ticket (optional)
 	 * 	- department_id The ID of the ticket department (optional)
 	 * 	- summary The ticket summary (optional)
 	 * 	- priority The ticket priority (optional)
@@ -172,14 +316,14 @@ class SupportManagerproTickets extends SupportManagerproModel {
 			if (isset($staff_settings['signature']) && trim($staff_settings['signature']) == trim($vars['details']))
 				$vars['details'] = "";
 		}
-
+		
 		// Determine whether or not options have changed that need to be logged
 		$log_options = array();
 		// "status" should be the last element in case it is set to closed, so it will be the last log entry added
 		$loggable_fields = array('department_id' => "department_id", 'ticket_staff_id' => "staff_id", 'summary' => "summary",
 			'priority' => "priority", 'status' => "status");
 
-		if (!$new_ticket && $vars['type'] == "reply" && (isset($vars['department_id']) || isset($vars['summary']) || isset($vars['priority']) || isset($vars['status']) || isset($vars['ticket_staff_id']))) {
+		if (!$new_ticket && (isset($vars['department_id']) || isset($vars['summary']) || isset($vars['priority']) || isset($vars['status']) || isset($vars['ticket_staff_id']))) {
 			if (($ticket = $this->get($ticket_id, false))) {
 				// Determine if any log replies need to be made
 				foreach ($loggable_fields as $key => $option) {
@@ -196,8 +340,9 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		$skip_reply = false;
 		if (!empty($log_options) && empty($vars['details']) && (empty($files) || empty($files['attachment']['name'][0])))
 			$skip_reply = true;
-
+		
 		if (!$skip_reply) {
+
 			$this->Input->setRules($this->getReplyRules($vars, $new_ticket));
 			
 			if ($this->Input->validates($vars)) {
@@ -206,14 +351,14 @@ class SupportManagerproTickets extends SupportManagerproModel {
 				$this->Record->insert("support_repliespro", $vars, $fields);
 				$reply_id = $this->Record->lastInsertId();
 
+                // Update replay ticket status to awaiting_reply if replyed by staff
+                if (isset($vars['staff_id'])){
+                    if ($vars['staff_id'] > 0 && $vars['type'] == "reply" && $vars['status'] != "awaiting_reply"){
+                        $this->edit($vars['ticket_id'], array('status' => "awaiting_reply"));
+                    }
+                }
 
-        if ($vars['details'] != "" && isset($vars['staff_id']) && isset($vars['status'])){
-         // update replay ticket status to awaiting_reply
-                  $this->edit($vars['ticket_id'], array('status' => "awaiting_reply"));
-        }
-
-
-				// Handle file upload
+            	// Handle file upload
 				if (!empty($files['attachment'])) {
 					Loader::loadComponents($this, array("SettingsCollection", "Upload"));
 					
@@ -273,13 +418,13 @@ class SupportManagerproTickets extends SupportManagerproModel {
 			if (isset($data['ticket_staff_id']))
 				$ticket_staff_id_field = (isset($data['ticket_staff_id']) ? array('staff_id' => $data['ticket_staff_id']) : array());
 				
-			$this->edit($ticket_id, array_merge($data, $ticket_staff_id_field));
+			$this->edit($ticket_id, array_merge($data, $ticket_staff_id_field), false);
 			
 			if (!($errors = $this->errors())) {
 				// Log each support ticket field change
 				foreach ($log_options as $field) {
 					$log_vars = array(
-						'staff_id' => isset($vars['staff_id']) ? $vars['staff_id'] : "0",
+                        'staff_id' => (array_key_exists("staff_id", $vars) ? $vars['staff_id'] : $this->system_staff_id),
 						'type' => "log"
 					);
 					
@@ -322,6 +467,176 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		// Return the ID of the reply
 		if (isset($reply_id))
 			return $reply_id;
+	}
+
+    /**
+     * Replies to a ticket and sends a ticket updated email
+     *
+     * @param string $reply The details to include in the reply
+     * @param int $ticket_id The ID of the ticket to reply to
+     * @param string $hostname The hostname of the company to which this ticket belongs
+     * @param int $staff_id The ID of the staff member replying to the ticket (optional, default 0 for system reply)
+     * @param array $additional_tags A key=>value list of the email_action=>tags array to send
+	 * 	e.g. array('SupportManagerpro.ticket_updated' => array('tag' => "value"))
+     */
+    private function staffReplyEmail($reply, $ticket_id, $hostname, $staff_id = 0, $additional_tags = array()) {
+        // Add the reply and send the email
+        if (!empty($reply)) {
+            if (!isset($this->Html))
+                Loader::loadHelpers($this, array("Html"));
+            
+            $key = mt_rand();
+            $hash = $this->generateReplyHash($ticket_id, $key);
+            $tags = array('SupportManagerpro.ticket_updated' => array('update_ticket_url' => $this->Html->safe($hostname . $this->getWebDirectory() . Configure::get("Route.client") . "/plugin/support_managerpro/client_tickets/reply/" . $ticket_id . "/?sid=" . rawurlencode($this->systemEncrypt('h=' . substr($hash, -16) . "|k=" . $key)))));
+            $tags = array_merge($tags, $additional_tags);
+            $reply_id = $this->addReply($ticket_id, array('details' => $reply, 'staff_id' => $staff_id));
+            $this->sendEmail($reply_id, $tags);
+        }
+    }
+	
+    /**
+     * Merges a set of tickets into another
+     *
+     * @param int $ticket_id The ID of the ticket that will receive the merges
+     * @param array $tickets A list of ticket IDs to be merged
+     */
+    public function merge(array $tickets) {
+         $gtid = $tickets;
+         $multiarray=count($gtid);
+
+              for($x=0;$x<$multiarray;$x++)
+                 {
+                     if ($x > 0){
+                		// Start a transaction
+                		$this->Record->begin();
+
+                        // Merge Tickets
+                        $this->Record->where("ticket_id", "=", $gtid[$x])->update("support_repliespro", array("ticket_id"=>$gtid[0]));
+                		$this->Record->commit();
+
+                        // Delete Ticket Merged
+                        $this->DeleteOneTicket($gtid[$x]);
+                      }
+                  }
+    }
+
+
+	/**
+	 * Delete Tickets when Merged into One
+	 *
+	 * @param int $ticket_id The ID of the ticket merged
+	 * @param int $staff_id The ID of the staff that do the action
+	 */
+	public function DeleteOneTicket($ticket_id, $staff_id = null) {
+		// Start a transaction
+		$this->Record->begin();
+
+		// Delete one Ticket from the support system
+		$this->Record->from("support_ticketspro")->
+			where("support_ticketspro.id", "=", $ticket_id)->
+			delete();
+		// Commit the transaction
+		$this->Record->commit();
+	}
+
+
+	/**
+	 * Permanent Delete Tickets
+	 *
+	 * @param int $ticket_id The ID of the ticket to be deleted permanent
+	 * @param int $staff_id The ID of the staff that do the action
+	 */
+	public function DeleteTickets($tickets, $staff_id = null) {
+         $gtid = $tickets;
+         $multiarray=count($gtid);
+
+              for($x=0;$x<$multiarray;$x++)
+                 {
+                		// Start a transaction
+                		$this->Record->begin();
+
+                		// Delete all Tickts from the support system
+                		$this->Record->from("support_repliespro")->
+                			leftJoin("support_ticketspro", "support_ticketspro.id", "=", "support_repliespro.ticket_id", false)->
+                				on("support_attachmentspro.reply_id", "=", "support_repliespro.id", false)->
+                			leftJoin("support_attachmentspro", "support_attachmentspro.reply_id", "=", "support_attachmentspro.reply_id", false)->
+                			where("support_ticketspro.id", "=", $gtid[$x])->
+                			delete(array("support_repliespro.*", "support_ticketspro.*", "support_attachmentspro.*"));
+                		// Commit the transaction
+                		$this->Record->commit();
+                  }
+	}
+
+
+	/**
+	 * Permanent Delete Reply
+	 *
+	 * @param int $reply_id The ID of the ticket to be deleted permanent
+	 * @param int $staff_id The ID of the staff that do the action
+	 */
+	public function DeleteReply($replies, $staff_id = null) {
+         $gtid = $replies;
+         $multiarray=count($gtid);
+
+              for($x=0;$x<$multiarray;$x++)
+                 {
+                		// Start a transaction
+                		$this->Record->begin();
+
+                		// Delete reply from ticket
+                		$this->Record->from("support_repliespro")->
+                				on("support_attachmentspro.reply_id", "=", "support_repliespro.id", false)->
+                			leftJoin("support_attachmentspro", "support_attachmentspro.reply_id", "=", "support_attachmentspro.reply_id", false)->
+                			where("support_repliespro.id", "=", $gtid[$x])->
+                			delete(array("support_repliespro.*", "support_attachmentspro.*"));
+                		// Commit the transaction
+                		$this->Record->commit();
+                  }
+	}
+
+
+	/**
+	 * Splits the given ticket with the given replies, notes, into a new ticket
+	 *
+	 * @param int $ticket_id The ID of the ticket to split
+	 * @param array $replies A list of reply IDs belonging to the given ticket, which should be assigned to a new ticket
+	 * @return int The ID of the newly-created ticket on success, or void on error
+	 */
+	public function split($ticket_id, array $replies) {
+		// Fetch the ticket
+		$ticket = $this->get($ticket_id);
+		
+		$rules = array(
+			'ticket_id' => array(
+				'exists' => array(
+					'rule' => ($ticket ? true : false),
+					'message' => $this->_("SupportManagerproTickets.!error.ticket_id.exists")
+				)
+			),
+			'replies' => array(
+				'valid' => array(
+					'rule' => array(array($this, "validateReplies"), $ticket_id),
+					'message' => $this->_("SupportManagerproTickets.!error.replies.valid")
+				)
+			)
+		);
+		
+		$vars = array('ticket_id' => $ticket_id, 'replies' => $replies);
+		
+		$this->Input->setRules($rules);
+		if ($this->Input->validates($vars)) {
+			// Create the new ticket
+			$new_ticket_id = $this->add((array)$ticket);
+			
+			if ($new_ticket_id) {
+				// Re-assign the replies
+				foreach ($replies as $reply_id) {
+					$this->Record->where("id", "=", (int)$reply_id)->update("support_repliespro", array('ticket_id' => $new_ticket_id));
+				}
+			}
+			
+			return $new_ticket_id;
+		}
 	}
 	
 	/**
@@ -391,7 +706,7 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		
 		return $ticket;
 	}
-
+	
 	/**
 	 * Retrieves a specific ticket
 	 *
@@ -404,10 +719,10 @@ class SupportManagerproTickets extends SupportManagerproModel {
 	public function getTicketByCode($code, $get_replies = true, array $reply_types = null) {
 		// Get the ticket
 		$ticket = $this->getTickets()->where("support_ticketspro.code", "=", $code)->fetch();
-
+		
 		if ($get_replies)
 			$ticket->replies = $this->getReplies($ticket->id, $reply_types);
-
+		
 		return $ticket;
 	}
 	
@@ -423,7 +738,7 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		
 		return $this->dateToUtc(date("c"), "Ymd\THisO") . "_" . $file_name;
 	}
-
+	
 	/**
 	 * Retrieve a list of tickets
 	 *
@@ -473,6 +788,28 @@ class SupportManagerproTickets extends SupportManagerproModel {
 	 */
 	public function search($query, $staff_id = null, $page=1, $order_by = array('last_reply_date' => "desc")) {
 		$this->Record = $this->searchTickets($query, $staff_id);
+		return $this->Record->order($order_by)->
+			limit($this->getPerPage(), (max(1, $page) - 1)*$this->getPerPage())->
+			fetchAll();
+	}
+	
+	/**
+	 * Seaches for tickets, specifically by ticket code of a given status
+	 *
+	 * @param string $query The value to search ticket codes for
+	 * @param int $staff_id The ID of the staff member searching tickets (optional)
+	 * @param mixed $status The status of tickets to search (optional, default null for all)
+	 * @param int $page The page number of results to fetch (optional, default 1)
+	 * @param array $order_by The sort=>$order options
+	 * @return array An array of tickets that match the search criteria
+	 */
+	public function searchByCode($query, $staff_id = null, $status = null, $page = 1, $order_by = array('last_reply_date' => "desc")) {
+		$this->Record = $this->getTickets($status, $staff_id);
+		
+		$this->Record->open()->
+			like("support_ticketspro.code", "%" . $query . "%")->
+			close();
+		
 		return $this->Record->order($order_by)->
 			limit($this->getPerPage(), (max(1, $page) - 1)*$this->getPerPage())->
 			fetchAll();
@@ -562,8 +899,8 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		);
 		
 		$this->Record->select($fields, false)->
-			select(array('IF(staff.id IS NULL, IF(support_ticketspro.email IS NULL, ?, ?), ?)' => "reply_by"), false)->
-			appendValues(array("client", "email", "staff"))->
+			select(array('IF(support_repliespro.staff_id = ?, ?, IF(staff.id IS NULL, IF(support_ticketspro.email IS NULL, ?, ?), ?))' => "reply_by"), false)->
+			appendValues(array($this->system_staff_id, "staff", "client", "email", "staff"))->
 			from("support_repliespro")->
 			innerJoin("support_ticketspro", "support_ticketspro.id", "=", "support_repliespro.ticket_id", false)->
 			leftJoin("clients", "clients.id", "=", "support_ticketspro.client_id", false)->
@@ -609,7 +946,7 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		$department_ids = array();
 		if ($staff_id)
 			$department_ids = $this->getStaffDepartments($staff_id);
-		
+
 		$sub_query = new Record();
 		$sub_query->select(array("support_repliespro.ticket_id", 'MAX(support_repliespro.date_added)' => "reply_date"))->
 			from("support_repliespro")->where("support_repliespro.type", "=", "reply")->
@@ -617,9 +954,10 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		$replies = $sub_query->get();
 		$reply_values = $sub_query->values;
 		$this->Record->reset();
-		
-		$fields = array("support_ticketspro.*", 'support_repliespro.date_added' => "last_reply_date",
-			'support_departmentspro.name' => "department_name", "support_departmentspro.company_id");
+
+		$fields = array("support_ticketspro.*", 'support_repliespro.date_added' => "last_reply_date", 'support_repliespro.staff_id' => "last_reply_staff_id",
+			'support_departmentspro.name' => "department_name", "support_departmentspro.company_id", 'staff_assigned.first_name' => "assigned_staff_first_name",
+            'staff_assigned.last_name' => "assigned_staff_last_name");
 		$last_reply_fields = array(
 			'IF(support_repliespro.staff_id IS NULL, IF(support_ticketspro.email IS NULL, ?, ?), ?)' => "last_reply_by",
 			'IF(support_repliespro.staff_id IS NULL, contacts.first_name, staff.first_name)' => "last_reply_first_name",
@@ -630,7 +968,7 @@ class SupportManagerproTickets extends SupportManagerproModel {
 			"client", "email", "staff",
 			null, null
 		);
-		
+
 		$this->Record->select($fields)->
 			select($last_reply_fields, false)->appendValues($last_reply_values)->
 			from("support_ticketspro")->
@@ -644,7 +982,8 @@ class SupportManagerproTickets extends SupportManagerproModel {
 			leftJoin("clients", "clients.id", "=", "support_ticketspro.client_id", false)->
 			on("contacts.contact_type", "=", "primary")->
 			leftJoin("contacts", "contacts.client_id", "=", "clients.id", false)->
-			leftJoin("staff", "staff.id", "=", "support_repliespro.staff_id", false);
+			leftJoin("staff", "staff.id", "=", "support_repliespro.staff_id", false)->
+            leftJoin(array('staff' => "staff_assigned"), "staff_assigned.id", "=", "support_ticketspro.staff_id", false);
 		
 		// Filter by status
 		if ($status) {
@@ -669,14 +1008,14 @@ class SupportManagerproTickets extends SupportManagerproModel {
 			
 			if (!empty($department_ids))
 				$this->Record->orWhere("support_ticketspro.department_id", "in", $department_ids);
-
+				
 			$this->Record->close();
 		}
-		
+
 		// Filter by tickets assigned to the client
 		if ($client_id)
 			$this->Record->where("support_ticketspro.client_id", "=", $client_id);
-		
+
 		return $this->Record;
 	}
 	
@@ -806,11 +1145,22 @@ class SupportManagerproTickets extends SupportManagerproModel {
 	}
 	
 	/**
+	 * Generates a pseudo-random hash from an sha256 HMAC of the ticket ID
+	 *
+	 * @param int $ticket_id The ID of the ticket to generate the hash for
+	 * @param mixed $key A key to include in the hash
+	 * @return string A hexadecimal hash of the given length
+	 */
+	public function generateReplyHash($ticket_id, $key) {
+		return $this->systemHash($ticket_id . $key);
+	}
+	
+	/**
 	 * Generates a pseudo-random reply code from an sha256 HMAC of the ticket ID code
 	 *
 	 * @param int $ticket_code The ticket code to generate the reply code from
-	 * @param int $length The length of the reply code between 4 and 64 characters
-	 * @return string A 4-character hexidecimal reply code
+	 * @param int $length The length of the reply code between 4 and 64 characters (optional, default 4)
+	 * @return string A hexadecimal reply code of the given length
 	 */
 	public function generateReplyCode($ticket_code, $length = 4) {
 		$hash = $this->systemHash($ticket_code);
@@ -857,8 +1207,8 @@ class SupportManagerproTickets extends SupportManagerproModel {
 			'support_departmentspro.name' => "department_name", 'support_departmentspro.email' => "department_email",
 			"support_departmentspro.override_from_email");
 		$ticket = $this->Record->select($fields)->
-			select(array('IF(staff.id IS NULL, IF(support_ticketspro.email IS NULL, ?, ?), ?)' => "reply_by"), false)->
-			appendValues(array("client", "email", "staff"))->
+			select(array('IF(support_repliespro.staff_id = ?, ?, IF(staff.id IS NULL, IF(support_ticketspro.email IS NULL, ?, ?), ?))' => "reply_by"), false)->
+			appendValues(array($this->system_staff_id, "staff", "client", "email", "staff"))->
 			from("support_repliespro")->
 			innerJoin("support_ticketspro", "support_ticketspro.id", "=", "support_repliespro.ticket_id", false)->
 			innerJoin("support_departmentspro", "support_departmentspro.id", "=", "support_ticketspro.department_id", false)->
@@ -1250,7 +1600,14 @@ class SupportManagerproTickets extends SupportManagerproModel {
 					'message' => "",
 					'post_format' => array(array($this, "dateToUtc"))
 				)
-			)
+			),
+            'by_staff_id' => array(
+                'exists' => array(
+                    'if_set' => true,
+					'rule' => array(array($this, "validateStaffExists")),
+					'message' => $this->_("SupportManagerTickets.!error.by_staff_id.exists")
+                )
+            )
 		);
 		
 		if ($edit) {
@@ -1341,8 +1698,7 @@ class SupportManagerproTickets extends SupportManagerproModel {
 	 * @return boolean True if the staff ID exists, false otherwise
 	 */
 	public function validateStaffExists($staff_id) {
-		// Staff ID 0 indicates a system-level ID
-		if ($staff_id == "" || $staff_id == "0" || $this->validateExists($staff_id, "id", "staff", false))
+		if ($staff_id == "" || $staff_id == $this->system_staff_id || $this->validateExists($staff_id, "id", "staff", false))
 			return true;
 		return false;
 	}
@@ -1385,6 +1741,163 @@ class SupportManagerproTickets extends SupportManagerproModel {
 	}
 	
 	/**
+	 * Validates that the given replies belong to the given ticket and that they are of the reply/note type.
+	 *
+	 * @param array $replies A list of IDs representing ticket replies
+	 * @param int $ticket_id The ID of the ticket to which the replies belong
+	 * @param boolean $all False to require that at least 1 ticket reply not be given for this ticket, or true to allow all (optional, default false)
+	 * @return boolean True if all of the given replies are valid; false otherwise
+	 */
+	public function validateReplies(array $replies, $ticket_id, $all = false) {
+		// Must have at least one reply ID
+		if (empty($replies) || !($ticket = $this->get($ticket_id)))
+			return false;
+		
+		// Determine replies that are valid
+		$valid_replies = array();
+		foreach ($ticket->replies as $reply) {
+			if (in_array($reply->type, array("reply", "note")))
+				$valid_replies[$reply->id] = true;
+		}
+		
+		// Check that all replies given are valid replies
+		$remaining_replies = $valid_replies;
+		foreach ($replies as $reply_id) {
+			if (!array_key_exists($reply_id, $valid_replies))
+				return false;
+			unset($remaining_replies[$reply_id]);
+		}
+		
+		// At least one reply must be left remaining
+		if (!$all && count($remaining_replies) <= 0)
+			return false;
+		
+		// There must be valid replies
+		return !empty($valid_replies);
+	}
+
+    /**
+     * Validates that the given open tickets can be merged into the given ticket
+     *
+     * @param array $tickets A list of ticket IDs
+     * @param int $ticket_id The ID of the ticket the tickets are to be merged into
+     * @return boolean True if all of the given tickets can be merged into the ticket, or false otherwise
+     */
+    public function validateTicketsMergeable(array $tickets, $ticket_id) {
+        // Fetch the ticket
+        $ticket = $this->get($ticket_id, false);
+        if (!$ticket || $ticket->status == "closed")
+            return false;
+        
+        // Check whether every ticket belongs to the same client (or email address), belongs to the same company, and are open
+        foreach ($tickets as $old_ticket_id) {
+            // Fetch the ticket
+            $old_ticket = $this->get($old_ticket_id, false);
+            if (!$old_ticket)
+                return false;
+            
+            // Check company matches, client matches, and ticket is open
+            if (($old_ticket->company_id != $ticket->company_id) || ($old_ticket->status == "closed") ||
+                ($old_ticket->client_id != $ticket->client_id || $old_ticket->email != $ticket->email))
+                return false;
+        }
+        
+        return true;
+    }
+
+    /**
+     * Validates that all of the given tickets can be updated to the associated service
+     *
+     * @param array $vars An array consisting of arrays of ticket vars whose index refers to the index of the $ticket_ids array representing the vars of the specific ticket to update; or an array of vars to apply to all tickets; each including:
+	 * 	- service_id The ID of the client service this ticket relates to
+	 * @param array $ticket_ids An array of ticket IDs to update
+	 * @return boolean True if the service(s) match the tickets, or false otherwise
+     */
+    public function validateServicesMatchTickets(array $vars, array $ticket_ids) {
+        // Determine whether to apply vars to all tickets, or whether each ticket has separate vars
+        $separate_vars = (isset($vars[0]) && is_array($vars[0]));
+
+        // Check whether the tickets can be assigned to the given service(s)
+        foreach ($ticket_ids as $key => $ticket_id) {
+            // Each ticket has separate vars specific to that ticket
+            $temp_vars = $vars;
+            if ($separate_vars) {
+                // Since all fields are optional, we don't need to require a service_id be given
+                if (!isset($vars[$key]) || empty($vars[$key]))
+                    $vars[$key] = array();
+
+                $temp_vars = $vars[$key];
+            }
+
+            // Check whether the client has this service
+            if (isset($temp_vars['service_id'])) {
+                // Fetch the ticket
+                $ticket = $this->get($ticket_id, false);
+                if ($ticket && !empty($ticket->client_id)) {
+                    // Check whether the client has the service
+                    $services = $this->Record->select(array("id"))->from("services")->where("client_id", "=", $ticket->client_id)->fetchAll();
+                    $temp_services = array();
+                    foreach ($services as $service)
+                        $temp_services[] = $service->id;
+
+                    if (!in_array($temp_vars['service_id'], $temp_services))
+                        return false;
+                }
+                else
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Validates that all of the given tickets can be updated to the associated department
+     *
+     * @param array $vars An array consisting of arrays of ticket vars whose index refers to the index of the $ticket_ids array representing the vars of the specific ticket to update; or an array of vars to apply to all tickets; each including:
+	 * 	- department_id The department to reassign the ticket to
+	 * @param array $ticket_ids An array of ticket IDs to update
+	 * @return boolean True if the department(s) match the tickets, or false otherwise
+     */
+    public function validateDepartmentsMatchTickets(array $vars, array $ticket_ids) {
+        // Determine whether to apply vars to all tickets, or whether each ticket has separate vars
+        $separate_vars = (isset($vars[0]) && is_array($vars[0]));
+
+        // Check whether the tickets can be assigned to the given service(s)
+        foreach ($ticket_ids as $key => $ticket_id) {
+            // Each ticket has separate vars specific to that ticket
+            $temp_vars = $vars;
+            if ($separate_vars) {
+                // Since all fields are optional, we don't need to require a department_id be given
+                if (!isset($vars[$key]) || empty($vars[$key]))
+                    $vars[$key] = array();
+
+                $temp_vars = $vars[$key];
+            }
+
+            if (isset($temp_vars['department_id'])) {
+                // Fetch the ticket
+                $ticket = $this->get($ticket_id, false);
+                if ($ticket) {
+                    // Fetch the department company of this ticket
+                    $department = $this->Record->select(array("company_id"))->from("support_departmentspro")->where("id", "=", $ticket->department_id)->fetch();
+                    
+                    // Ensure the new department is in the same company as the ticket's department
+                    $same_company = $this->Record->select()->from("support_departmentspro")->
+                        where("id", "=", $temp_vars['department_id'])->
+                        where("company_id", "=", ($department ? $department->company_id : ""))->
+                        fetch();
+
+                    if (!$same_company)
+                        return false;
+                }
+            }
+        }
+
+        return true;
+    }
+	
+	/**
 	 * Generates a ticket number
 	 *
 	 * @return int A ticket number
@@ -1401,7 +1914,7 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		$ticket_code = "";
 		while ($attempts++ < 3) {
 			$ticket_code = mt_rand($min, $max);
-
+			
 			// Skip if this ticket already exists
 			if ($this->validateExists($ticket_code, "code", "support_ticketspro"))
 				continue;
@@ -1409,87 +1922,6 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		}
 		return $ticket_code;
 	}
-
-	/**
-	 * Change a ticket status to Close and logs that it has been closed
-	 *
-	 * @param int $ticket_id The ID of the ticket to add to spam status
-	 * @param int $staff_id The ID of the staff that do the action
-	 */
-	public function ClosedStatus($ticket_id, $staff_id = null) {
-		// Set vars
-		$statuses = $this->getStatuses();
-		$vars = array(
-			'details' => Language::_("SupportManagerproTickets.log.status", true, $statuses['closed']),
-			'type' => "log"
-		);
-		// Begin a transaction
-		$this->Record->begin();
-        $errors = $this->errors();
-		// Update the ticket to close
-		$this->edit($ticket_id, array('status' => "closed", 'date_closed' => date("c")));
-		$edit_errors = $this->errors();
-		$errors = array_merge(($errors ? $errors : array()), ($edit_errors ? $edit_errors : array()));
-		if ($errors)
-			$this->Record->rollBack();
-		else
-			$this->Record->commit();
-	}
-
-	/**
-	 * Change a ticket status to Spam and logs that it has been closed
-	 *
-	 * @param int $ticket_id The ID of the ticket to add to spam status
-	 * @param int $staff_id The ID of the staff that do the action
-	 */
-	public function SpamStatus($ticket_id, $staff_id = null) {
-		// Set vars
-		$statuses = $this->getStatuses();
-		$vars = array(
-			'details' => Language::_("SupportManagerproTickets.log.status", true, $statuses['spam']),
-			'type' => "log"
-		);
-		// Begin a transaction
-		$this->Record->begin();
-        $errors = $this->errors();
-		// Update the ticket to spam
-		$this->edit($ticket_id, array('status' => "spam", 'date_closed' => date("c")));
-		$edit_errors = $this->errors();
-		$errors = array_merge(($errors ? $errors : array()), ($edit_errors ? $edit_errors : array()));
-		if ($errors)
-			$this->Record->rollBack();
-		else
-			$this->Record->commit();
-	}
-
-
-	/**
-	 * Change a ticket status to Deleted and logs that it has been closed
-	 *
-	 * @param int $ticket_id The ID of the ticket to add do delete status
-	 * @param int $staff_id The ID of the staff that do the action
-	 */
-	public function DeletedStatus($ticket_id, $staff_id = null) {
-		// Set vars
-		$statuses = $this->getStatuses();
-		$vars = array(
-			'details' => Language::_("SupportManagerproTickets.log.status", true, $statuses['deleted']),
-			'type' => "log"
-		);
-		// Begin a transaction
-		$this->Record->begin();
-        $errors = $this->errors();
-		// Update the ticket to deleted
-		$this->edit($ticket_id, array('status' => "deleted", 'date_closed' => date("c")));
-		$edit_errors = $this->errors();
-		$errors = array_merge(($errors ? $errors : array()), ($edit_errors ? $edit_errors : array()));
-		if ($errors)
-			$this->Record->rollBack();
-		else
-			$this->Record->commit();
-	}
-
-
 	/**
 	 * Permanent Delete Tickets
 	 *
@@ -1531,43 +1963,6 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		// Commit the transaction
 		$this->Record->commit();
 	}
-
-	/**
-	 * Delete Tickets when Merged into One
-	 *
-	 * @param int $ticket_id The ID of the ticket merged
-	 * @param int $staff_id The ID of the staff that do the action
-	 */
-	public function PurgeOneTicket($ticket_id, $staff_id = null) {
-		// Start a transaction
-		$this->Record->begin();
-
-		// Delete one Ticket from the support system
-		$this->Record->from("support_ticketspro")->
-			where("support_ticketspro.id", "=", $ticket_id)->
-			delete();
-		// Commit the transaction
-		$this->Record->commit();
-	}
-
-	/**
-	 * Merge Tickets
-	 *
-	 * @param int $ticket_id The ID of the ticket to close
-	 */
-	public function MergeTickets($ticket_id, $ticket_idm, $staff_id = null) {
-		// Start a transaction
-		$this->Record->begin();
-
-        // Merge Tickets
-        $this->Record->where("ticket_id", "=", $ticket_id)->update("support_repliespro", array("ticket_id"=>$ticket_idm));
-		$this->Record->commit();
-
-        // Delete Ticket Merged
-        $this->PurgeOneTicket($ticket_id);
-	}
-
-
 	/**
 	 * Retrieves a specific ticket by email
 	 *
@@ -1580,7 +1975,5 @@ class SupportManagerproTickets extends SupportManagerproModel {
         if ($ntickets > 0)
         return $ntickets;
 	}
-
-
 }
 ?>

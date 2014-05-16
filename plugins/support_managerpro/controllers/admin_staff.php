@@ -1,6 +1,6 @@
 <?php
 /**
- * Support Manager Admin Staff controller
+ * Support Managerpro Admin Staff controller
  * 
  * @package blesta
  * @subpackage blesta.plugins.support_managerpro
@@ -269,7 +269,8 @@ class AdminStaff extends SupportManagerproController {
 		
 		$vars = array(
 			'staff' => $staff,
-			'days' => $this->SupportManagerproStaff->getDays(true)
+			'days' => $this->SupportManagerproStaff->getDays(true),
+            'string' => $this->DataStructure->create("string")
 		);
 		
 		// Send the template

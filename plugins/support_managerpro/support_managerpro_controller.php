@@ -1,6 +1,6 @@
 <?php
 /**
- * Support Manager parent controller
+ * Support Managerpro parent controller
  * 
  * @package blesta
  * @subpackage blesta.plugins.support_managerpro
@@ -14,6 +14,7 @@ class SupportManagerproController extends AppController {
 	 * Setup
 	 */
 	public function preAction() {
+		$this->structure->setDefaultView(APPDIR);
 		parent::preAction();
 		
 		// Load config
