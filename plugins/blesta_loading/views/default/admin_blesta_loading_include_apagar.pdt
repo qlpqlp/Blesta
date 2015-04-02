@@ -1,0 +1,49 @@
+<!-- display blesta loading-->
+<style type="text/css">
+<!--
+.ajax_blesta_loadingbk {
+    height: 100%;
+    width: 100%;
+    margin: 0px;
+    padding: 0px;
+    background-image: url(<?php echo($this->base_uri);?>../plugins/blesta_loading/views/default/images/ajax_blesta_loading_back.png);
+    position: fixed;
+    z-index:9999;
+}
+.ajax_blesta_loading {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    margin-left: -50px;
+    margin-top: -50px;
+    text-align:center;
+    overflow: auto;
+    width: 68px;
+    height: 55px;
+}
+-->
+</style>
+<div id="ajax_blesta_loadingbk" class="ajax_blesta_loadingbk" style="display:none;">
+    <div id="ajax_blesta_loading" class="ajax_blesta_loading">
+        <img id="img-ajax_blesta_loading" src="<?php echo($this->base_uri);?>../plugins/blesta_loading/views/default/images/ajax_blesta_loading.gif" alt="Loading"/>
+    </div>
+</div>
+<script type="text/javascript">
+$(document).ready(function(){
+
+     $( "body" ).on( "click", ".ajax", function() {
+        $("#ajax_blesta_loadingbk").show();
+     });
+
+    $("#ajax_blesta_loadingbk").one("ajaxSend", function() {
+        $(this).show();
+    }).bind("ajaxStop", function() {
+        $(this).hide();
+    }).bind("ajaxError", function() {
+        $(this).hide();
+    });
+
+});
+
+</script>
+<!-- end display blesta loading-->

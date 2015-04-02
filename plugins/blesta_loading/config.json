@@ -1,0 +1,15 @@
+{
+	"version": "1.0.3",
+	"name": "Blesta Loading",
+	"description": "It darks the Admin Page and shows a Loading Image in every Ajax Event, to see the progress of the page load.",
+	"authors": [
+		{
+			"name": "Infoscan, Lda [WebLX]",
+			"url": "http://www.weblx.pt"
+		},
+        {
+			"name": "| Like it? Donate here by PayPal",
+			"url": "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=CKNEWEGABW47A"
+		}
+    ]
+}
