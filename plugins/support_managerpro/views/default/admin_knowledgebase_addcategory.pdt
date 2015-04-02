@@ -1,0 +1,41 @@
+
+		<?php
+		echo $this->Html->ifSet($message);
+		
+		$this->Widget->clear();
+		$this->Widget->create($this->_("AdminKnowledgebase.addcategory.boxtitle_addcategory", true));
+		
+		$this->Form->create();
+		?>
+		<div class="inner">
+			<div class="pad">
+				<ul>
+					<li>
+						<?php $this->Form->label($this->_("AdminKnowledgebase.addcategory.field_name", true));?>
+						<?php $this->Form->fieldText("name", $this->Html->ifSet($vars->name), array('id'=>"name"));?>
+					</li>
+					<li>
+						<?php $this->Form->label($this->_("AdminKnowledgebase.addcategory.field_parent_id", true));?>
+						<?php $this->Form->fieldSelect("parent_id", $this->Html->ifSet($categories), $this->Html->ifSet($vars->parent_id), array('id'=>"parent_id"));?>
+					</li>
+					<li>
+						<?php $this->Form->label($this->_("AdminKnowledgebase.addcategory.field_access", true));?>
+						<?php $this->Form->fieldSelect("access", $this->Html->ifSet($access_types), $this->Html->ifSet($vars->access), array('id'=>"access", 'class'=>"small"));?>
+						<span class="tooltip"><?php $this->_("AppController.tooltip.text");?><div><?php $this->_("AdminKnowledgebase.!tooltip.access_category");?></div></span>
+					</li>
+					<li>
+						<?php $this->Form->label($this->_("AdminKnowledgebase.addcategory.field_description", true));?>
+						<?php $this->Form->fieldTextarea("description", $this->Html->ifSet($vars->description), array('id'=>"description", 'class'=>"small"));?>
+					</li>
+				</ul>
+			</div>
+			
+			<div class="button_row">
+				<a class="btn_right submit" href="#"><?php $this->_("AdminKnowledgebase.addcategory.submit_add");?></a>
+				<a class="btn_right" href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_knowledgebase/index/" . ($this->Html->ifSet($category) ? $this->Html->ifSet($category->id) . "/" : ""));?>"><?php $this->_("AdminKnowledgebase.addcategory.submit_cancel");?></a>
+			</div>
+		</div>
+		<?php
+		$this->Form->end();
+		$this->Widget->end();
+		?>

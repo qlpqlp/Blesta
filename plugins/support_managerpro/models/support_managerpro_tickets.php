@@ -290,6 +290,7 @@ class SupportManagerproTickets extends SupportManagerproModel {
 	 * @param array $vars A list of reply vars, including:
 	 * 	- staff_id The ID of the staff member this reply is from (optional)
 	 * 	- client_id The ID of the client this reply is from (optional)
+     * 	- contact_id The ID of a client's contact that this reply is from (optional)
 	 * 	- type The type of reply (i.e. "reply, "note", "log") (optional, default "reply")
 	 * 	- details The details of the ticket (optional)
 	 * 	- department_id The ID of the ticket department (optional)
@@ -347,11 +348,11 @@ class SupportManagerproTickets extends SupportManagerproModel {
 			
 			if ($this->Input->validates($vars)) {
 				// Create the reply
-				$fields = array("ticket_id", "staff_id", "type", "details", "date_added");
+                $fields = array("ticket_id", "staff_id", "contact_id", "type", "details", "date_added");
 				$this->Record->insert("support_repliespro", $vars, $fields);
 				$reply_id = $this->Record->lastInsertId();
 
-                // Update replay ticket status to awaiting_reply if replyed by staff
+                // Update reply ticket status to awaiting_reply if replyed by staff
                 if (isset($vars['staff_id'])){
                     if ($vars['staff_id'] > 0 && $vars['type'] == "reply" && $vars['status'] != "awaiting_reply"){
                         $this->edit($vars['ticket_id'], array('status' => "awaiting_reply"));
@@ -662,7 +663,7 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		// Filter by status
 		switch ($status) {
 			case "not_closed":
-				$this->Record->where("support_ticketspro.status", "!=", "closed");
+				$this->Record->where("support_ticketspro.status", "!=", "closed")->where("support_ticketspro.status", "!=", "deleted")->where("support_ticketspro.status", "!=", "spam");
 				break;
 			default:
 				$this->Record->where("support_ticketspro.status", "=", $status);
@@ -984,12 +985,12 @@ class SupportManagerproTickets extends SupportManagerproModel {
 			leftJoin("contacts", "contacts.client_id", "=", "clients.id", false)->
 			leftJoin("staff", "staff.id", "=", "support_repliespro.staff_id", false)->
             leftJoin(array('staff' => "staff_assigned"), "staff_assigned.id", "=", "support_ticketspro.staff_id", false);
-		
+
 		// Filter by status
 		if ($status) {
 			switch ($status) {
 				case "not_closed":
-					$this->Record->where("support_ticketspro.status", "!=", "closed");
+					$this->Record->where("support_ticketspro.status", "!=", "closed")->where("support_ticketspro.status", "!=", "deleted")->where("support_ticketspro.status", "!=", "spam");
 					break;
 				default:
 					$this->Record->where("support_ticketspro.status", "=", $status);
@@ -1117,6 +1118,47 @@ class SupportManagerproTickets extends SupportManagerproModel {
 	}
 	
 	/**
+	 * Fetches a client's contact given the contact's email address
+	 *
+	 * @param int $client_id The ID of the client whose contact the email address is presumed to be from
+	 * @param string $email The email address
+	 * @return mixed An stdClass object representing the contact with the given email address, or false if none exist
+	 */
+	public function getContactByEmail($client_id, $email) {
+		// Assume contact emails are unique per client, and only choose the first
+		return $this->Record->select(array("contacts.*"))->
+			from("contacts")->
+			where("contacts.email", "=", $email)->
+			where("contacts.client_id", "=", $client_id)->
+			fetch();
+	}
+
+	/**
+	 * Retrieves a list of all contact email addresses that have replied to the given ticket.
+	 * This does not include the client's primary contact email.
+	 *
+	 * @param int $ticket_id The ID of the ticket whose contact emails to fetch
+	 * @return array A numerically indexed array of email addresses of each contact that has replied to this ticket.
+	 * 	May be an empty array if no contact, or only the primary client contact, has replied.
+	 */
+	public function getContactEmails($ticket_id) {
+		// Fetch the email addresses of all contacts set on the ticket replies
+		$emails = $this->Record->select(array("contacts.email"))->
+			from("support_repliespro")->
+			innerJoin("contacts", "contacts.id", "=", "support_repliespro.contact_id", false)->
+			where("support_repliespro.ticket_id", "=", $ticket_id)->
+			group(array("contacts.email"))->
+			fetchAll();
+
+		$contact_emails = array();
+		foreach ($emails as $email) {
+			$contact_emails[] = $email->email;
+		}
+
+		return $contact_emails;
+	}
+
+	/**
 	 * Returns the ticket info if any exists
 	 *
 	 * @param string $body The body of the message
@@ -1201,6 +1243,7 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		// Fetch the associated ticket
 		$fields = array("support_ticketspro.*", 'support_repliespro.id' => "reply_id",
 			'support_repliespro.staff_id' => "reply_staff_id",
+            'support_repliespro.contact_id' => "reply_contact_id",
 			'support_repliespro.type' => "reply_type", "support_repliespro.details",
 			'support_repliespro.date_added' => "reply_date_added",
 			'support_departmentspro.id' => "department_id", 'support_departmentspro.company_id' => "company_id",
@@ -1226,6 +1269,20 @@ class SupportManagerproTickets extends SupportManagerproModel {
 				innerJoin("support_repliespro", "support_repliespro.ticket_id", "=", "support_ticketspro.id", false)->
 				where("support_ticketspro.id", "=", $ticket->id)->
 				numResults();
+
+			// Determine whether this ticket has any attachments
+			$num_attachments = $this->Record->select(array("support_attachmentspro.*"))->from("support_ticketspro")->
+				innerJoin("support_repliespro", "support_repliespro.ticket_id", "=", "support_ticketspro.id", false)->
+				innerJoin("support_attachmentspro", "support_attachmentspro.reply_id", "=", "support_repliespro.id", false)->
+				where("support_ticketspro.id", "=", $ticket->id)->numResults();
+			$ticket->has_attachments = ($num_attachments > 0);
+
+			// Check if this specific reply has any attachments
+			$ticket->reply_has_attachments = false;
+			if ($num_attachments > 0) {
+				$num_reply_attachments = $this->Record->select()->from("support_attachmentspro")->where("reply_id", "=", $reply_id)->numResults();
+				$ticket->reply_has_attachments = ($num_reply_attachments > 0);
+			}
 			
 			// Set status/priority language
 			$priorities = $this->getPriorities();
@@ -1242,6 +1299,29 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		}
 	}
 	
+	/**
+	 * Sends a notice to the ticket's assigned staff member to notify them that the ticket has been assigned to them
+	 *
+	 * @param int $ticket_id The ID of the ticket that a staff member has been assigned
+	 */
+	public function sendTicketAssignedEmail($ticket_id) {
+		Loader::loadModels($this, array("Emails", "Staff"));
+
+		// Notify the assigned staff in regards to this ticket
+		if (($ticket = $this->get($ticket_id, false)) && !empty($ticket->staff_id) && ($staff = $this->Staff->get($ticket->staff_id)) && $staff->email) {
+			// Set status/priority language
+			$priorities = $this->getPriorities();
+			$statuses = $this->getStatuses();
+			$ticket->priority_language = $priorities[$ticket->priority];
+			$ticket->status_language = $statuses[$ticket->status];
+
+			$tags = array('ticket' => $ticket, 'staff' => $staff);
+			$email_action = "SupportManagerpro.staff_ticket_assigned";
+
+			$this->Emails->send($email_action, $ticket->company_id, null, $staff->email, $tags);
+		}
+	}
+
 	/**
 	 * Sends ticket emails
 	 *
@@ -1272,7 +1352,7 @@ class SupportManagerproTickets extends SupportManagerproModel {
 	 * 	e.g. array('SupportManagerpro.ticket_received' => array('tag' => "value"))
 	 */
 	private function sendTicketReceived($ticket, $additional_tags = array()) {
-		Loader::loadModels($this, array("Clients", "Emails"));
+        Loader::loadModels($this, array("Clients", "Contacts", "Emails"));
 		
 		// Set options for the email
 		$options = array(
@@ -1282,10 +1362,16 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		);
 		
 		$to_email = $ticket->email;
+        $cc_email = array();
 		if ($ticket->client_id > 0) {
 			$client = $this->Clients->get($ticket->client_id);
-			if ($client)
+			if ($client) {
 				$to_email = $client->email;
+
+				// If the ticket was created by a contact, CC the contact
+				if (($contact = $this->Contacts->get($ticket->reply_contact_id)))
+					$cc_email[] = $contact->email;
+			}
 		}
 		$language = (isset($client->settings['language']) ? $client->settings['language'] : null);
 		
@@ -1294,7 +1380,7 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		// Set the tags
 		$other_tags = (isset($additional_tags[$email_action]) ? $additional_tags[$email_action] : array());
 		$tags = array_merge(array('ticket' => $ticket, 'ticket_hash_code' => $this->generateReplyNumber($ticket->code, 4)), $other_tags);
-		$this->Emails->send($email_action, $ticket->company_id, $language, $to_email, $tags, null, null, null, $options);
+        $this->Emails->send($email_action, $ticket->company_id, $language, $to_email, $tags, $cc_email, null, null, $options);
 	}
 	
 	/**
@@ -1385,14 +1471,19 @@ class SupportManagerproTickets extends SupportManagerproModel {
 	 * 	e.g. array('SupportManagerpro.ticket_received' => array('tag' => "value"))
 	 */
 	private function sendTicketByStaffEmail($ticket, $additional_tags = array()) {
-		Loader::loadModels($this, array("Clients", "Emails"));
+        Loader::loadModels($this, array("Clients", "Contacts", "Emails"));
 		
 		// Fetch client to set email language
 		$to_email = $ticket->email;
+        $cc_email = array();
 		if ($ticket->client_id > 0) {
 			$client = $this->Clients->get($ticket->client_id);
-			if ($client)
+			if ($client) {
 				$to_email = $client->email;
+
+				// CC all contacts that have replied to the ticket
+				$cc_email = $this->getContactEmails($ticket->id);
+			}
 		}
 		$language = (isset($client->settings['language']) ? $client->settings['language'] : null);
 		
@@ -1411,7 +1502,7 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		if (property_exists($ticket, "override_from_email") && $ticket->override_from_email == 1)
 			$options['from'] = $ticket->department_email;
 		
-		$this->Emails->send($email_action, $ticket->company_id, $language, $to_email, $tags, null, null, null, $options);
+        $this->Emails->send($email_action, $ticket->company_id, $language, $to_email, $tags, $cc_email, null, null, $options);
 	}
 	
 	/**
@@ -1461,6 +1552,18 @@ class SupportManagerproTickets extends SupportManagerproModel {
 					'if_set' => true,
 					'rule' => array(array($this, "validateStaffExists")),
 					'message' => $this->_("SupportManagerproTickets.!error.staff_id.exists")
+				)
+			),
+			'contact_id' => array(
+				'exists' => array(
+					'if_set' => true,
+					'rule' => array(array($this, "validateExists"), "id", "contacts"),
+					'message' => $this->_("SupportManagerproTickets.!error.contact_id.exists")
+				),
+				'valid' => array(
+					'if_set' => true,
+					'rule' => array(array($this, "validateClientContact"), $this->ifSet($vars['ticket_id']), $this->ifset($vars['client_id'])),
+					'message' => $this->_("SupportManagerproTickets.!error.contact_id.valid")
 				)
 			),
 			'type' => array(
@@ -1659,7 +1762,37 @@ class SupportManagerproTickets extends SupportManagerproModel {
 		
 		return ($results > 0);
 	}
-	
+
+	/**
+	 * Validates whether the given contact can reply to the given ticket for the ticket's client
+	 *
+	 * @param int $contact_id The ID of the contact
+	 * @param int $ticket_id The ID of the ticket
+	 * @param int $client_id The ID of the client assigned to the ticket if the ticket is not known (optional, default null)
+	 * @return boolean True if the contact can reply to the ticket, false otherwise
+	 */
+	public function validateClientContact($contact_id, $ticket_id, $client_id = null) {
+		// Contact does not need to be set
+		if ($contact_id === null)
+			return true;
+
+		$ticket = $this->get($ticket_id, false);
+
+		// In case a ticket is not yet known (e.g. in the process of being created), compare with the given client
+		$client_id = ($ticket && $ticket->client_id ? $ticket->client_id : $client_id);
+
+		if ($client_id !== null) {
+			// The ticket and the contact must belong to a client
+			$found = $this->Record->select()->from("contacts")->
+				where("id", "=", $contact_id)->
+				where("client_id", "=", $client_id)->
+				numResults();
+
+			if ($found)
+				return true;
+		}
+		return false;
+	}
 	/**
 	 * Validates that the given client can be assigned to the given ticket
 	 *

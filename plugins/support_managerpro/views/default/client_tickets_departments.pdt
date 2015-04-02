@@ -25,7 +25,7 @@
 							<h4><?php $this->Html->_($department->name);?></h4>
 							<?php
 							if (!empty($department->description))
-								echo $this->TextParser->encode("markdown", $this->Html->_($department->description, true));
+                                echo $this->TextParser->encode("markdown", $department->description);
 							?>
 						</a>
 					</div>

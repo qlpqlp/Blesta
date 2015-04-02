@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__FILE__) . DS . "support_managerpro_kb_controller.php";
 /**
  * Support Managerpro parent controller
  * 

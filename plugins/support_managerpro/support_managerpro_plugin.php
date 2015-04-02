@@ -1,7 +1,7 @@
 <?php
 /**
  * Support Managerpro plugin handler
- * 
+ *
  * @package blesta
  * @subpackage blesta.plugins.support_managerpro
  * @copyright Copyright (c) 2010, Phillips Data, Inc.
@@ -59,6 +59,7 @@ class SupportManagerproPlugin extends Plugin {
 				setField("id", array('type'=>"int", 'size'=>10, 'unsigned'=>true, 'auto_increment'=>true))->
 				setField("ticket_id", array('type'=>"int", 'size'=>10, 'unsigned'=>true))->
 				setField("staff_id", array('type'=>"int", 'size'=>10, 'unsigned'=>true, 'is_null'=>true, 'default'=>null))->
+                setField("contact_id", array('type'=>"int", 'size'=>10, 'unsigned'=>true, 'is_null'=>true, 'default'=>null))->
 				setField("type", array('type'=>"enum", 'size'=>"'reply','note','log'", 'default'=>"reply"))->
 				setField("details", array('type'=>"mediumtext"))->
 				setField("date_added", array('type'=>"datetime"))->
@@ -156,7 +157,52 @@ class SupportManagerproPlugin extends Plugin {
 				setField("value", array('type'=>"text"))->
 				setKey(array("key", "company_id", "staff_id"), "primary")->
 				create("support_staff_settingspro", true);
-			
+
+			// Knowledge base articles
+			$this->Record->
+				setField("id", array('type'=>"int", 'size'=>10, 'unsigned'=>true, 'auto_increment'=>true))->
+				setField("company_id", array('type'=>"int", 'size'=>10, 'unsigned'=>true))->
+				setField("access", array('type'=>"enum", 'size'=>"'public','private','hidden'", 'default'=>"public"))->
+				setField("up_votes", array('type'=>"int", 'size'=>10, 'unsigned'=>true, 'default'=>0))->
+				setField("down_votes", array('type'=>"int", 'size'=>10, 'unsigned'=>true, 'default'=>0))->
+				setField("date_created", array('type'=>"datetime"))->
+				setField("date_updated", array('type'=>"datetime"))->
+				setKey(array("id"), "primary")->
+				setKey(array("company_id", "access"), "index")->
+				create("support_kb_articlespro", true);
+
+			// Knowledge base article categories
+			$this->Record->
+				setField("category_id", array('type'=>"int", 'size'=>10, 'unsigned'=>true))->
+				setField("article_id", array('type'=>"int", 'size'=>10, 'unsigned'=>true))->
+				setKey(array("category_id", "article_id"), "primary")->
+				create("support_kb_article_categoriespro", true);
+
+			// Knowledgebase article content
+			$this->Record->
+				setField("article_id", array('type'=>"int", 'size'=>10, 'unsigned'=>true))->
+				setField("lang", array('type'=>"char", 'size'=>5))->
+				setField("title", array('type'=>"varchar", 'size'=>255))->
+				setField("body", array('type'=>"mediumtext"))->
+				setField("content_type", array('type'=>"enum", 'size'=>"'text','html'", 'default'=>"text"))->
+				setKey(array("article_id", "lang"), "primary")->
+				create("support_kb_article_contentpro", true);
+
+			// Knowledgebase categories
+			$this->Record->
+				setField("id", array('type'=>"int", 'size'=>10, 'unsigned'=>true, 'auto_increment'=>true))->
+				setField("parent_id", array('type'=>"int", 'size'=>10, 'unsigned'=>true, 'is_null'=>true, 'default'=>null))->
+				setField("company_id", array('type'=>"int", 'size'=>10, 'unsigned'=>true))->
+				setField("name", array('type'=>"varchar", 'size'=>255))->
+				setField("description", array('type'=>"text", 'is_null'=>true, 'default'=>null))->
+				setField("access", array('type'=>"enum", 'size'=>"'public','private','hidden'", 'default'=>"public"))->
+				setField("date_created", array('type'=>"datetime"))->
+				setField("date_updated", array('type'=>"datetime"))->
+				setKey(array("id"), "primary")->
+				setKey(array("company_id", "parent_id", "access"), "index")->
+				create("support_kb_categoriespro", true);
+
+
 			// Set the uploads directory
 			Loader::loadComponents($this, array("SettingsCollection", "Upload"));
 			$temp = $this->SettingsCollection->fetchSetting(null, Configure::get("Blesta.company_id"), "uploads_dir");
@@ -231,9 +277,9 @@ class SupportManagerproPlugin extends Plugin {
 			}
 		}
 
-        //because we cannot get the ID from a field we will add the code to make the magic
+        /*because we cannot get the ID from a field we will add the code to make the magic
         $findcode = '</body>';
-        $putbcode = '<?include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?></body>';
+        $putbcode = '<?php include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?></body>';
         $theme=scandir(VIEWDIR . "admin");
         for ($x=0; $x<count($theme); $x++){
             if (is_dir(VIEWDIR . "admin" . DS . $theme[$x])){
@@ -243,6 +289,19 @@ class SupportManagerproPlugin extends Plugin {
               }
             }
         }
+
+        //because we cannot get the ID from a field we will add the code to make the magic
+        $findcode = '</body>';
+        $putbcode = '<?php include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_client_count_include.pdt");?></body>';
+        $theme=scandir(VIEWDIR . "client");
+        for ($x=0; $x<count($theme); $x++){
+            if (is_dir(VIEWDIR . "client" . DS . $theme[$x])){
+              if($theme[$x]!= "." && $theme[$x]!= ".."){
+                $path_to_file = VIEWDIR . "client" . DS . $theme[$x] . DS . "structure.pdt";
+                $putcode = file_put_contents($path_to_file, str_replace($findcode, $putbcode, file_get_contents($path_to_file)));
+              }
+            }
+        }*/
 
 
 	}
@@ -534,7 +593,216 @@ class SupportManagerproPlugin extends Plugin {
                 }
 
 			}
-		}
+
+
+			// Upgrade to 2.1.3
+			if (version_compare($current_version, "2.1.3", "<")) {
+
+               //because we cannot get the ID from a field we will add the code to make the magic
+                $findcode = '<?php include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?>';
+                $rmbcode = '';
+                $theme=scandir(VIEWDIR . "admin");
+                for ($x=0; $x<count($theme); $x++){
+                    if (is_dir(VIEWDIR . "admin" . DS . $theme[$x])){
+                      if($theme[$x]!= "." && $theme[$x]!= ".."){
+                        $path_to_file = VIEWDIR . "admin" . DS . $theme[$x] . DS . "structure.pdt";
+                        $rmcode = file_put_contents($path_to_file, str_replace($findcode, $rmbcode, file_get_contents($path_to_file)));
+                      }
+                    }
+                }
+
+               //because we cannot get the ID from a field we will add the code to make the magic
+                $findcode = '<?include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?>';
+                $rmbcode = '';
+                $theme=scandir(VIEWDIR . "admin");
+                for ($x=0; $x<count($theme); $x++){
+                    if (is_dir(VIEWDIR . "admin" . DS . $theme[$x])){
+                      if($theme[$x]!= "." && $theme[$x]!= ".."){
+                        $path_to_file = VIEWDIR . "admin" . DS . $theme[$x] . DS . "structure.pdt";
+                        $rmcode = file_put_contents($path_to_file, str_replace($findcode, $rmbcode, file_get_contents($path_to_file)));
+                      }
+                    }
+                }
+
+
+                //because we cannot get the ID from a field we will add the code to make the magic
+                $findcode = '</body>';
+                $putbcode = '<?php include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?></body>';
+                $theme=scandir(VIEWDIR . "admin");
+                for ($x=0; $x<count($theme); $x++){
+                    if (is_dir(VIEWDIR . "admin" . DS . $theme[$x])){
+                      if($theme[$x]!= "." && $theme[$x]!= ".."){
+                        $path_to_file = VIEWDIR . "admin" . DS . $theme[$x] . DS . "structure.pdt";
+                        $putcode = file_put_contents($path_to_file, str_replace($findcode, $putbcode, file_get_contents($path_to_file)));
+                      }
+                    }
+                }
+
+                //because we cannot get the ID from a field we will add the code to make the magic
+                $findcode = '</body>';
+                $putbcode = '<?php include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_client_count_include.pdt");?></body>';
+                $theme=scandir(VIEWDIR . "client");
+                for ($x=0; $x<count($theme); $x++){
+                    if (is_dir(VIEWDIR . "client" . DS . $theme[$x])){
+                      if($theme[$x]!= "." && $theme[$x]!= ".."){
+                        $path_to_file = VIEWDIR . "client" . DS . $theme[$x] . DS . "structure.pdt";
+                        $putcode = file_put_contents($path_to_file, str_replace($findcode, $putbcode, file_get_contents($path_to_file)));
+                      }
+                    }
+                }
+
+                // remove nav cache
+                array_map('unlink', glob(CACHEDIR . "1" . DS . "nav" . DS . "*.html"));
+
+			}
+
+			// Upgrade to 2.3.0
+			if (version_compare($current_version, "2.3.0", "<")) {
+               //because we cannot get the ID from a field we will add the code to make the magic
+                $findcode = '<?php include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?>';
+                $rmbcode = '';
+                $theme=scandir(VIEWDIR . "admin");
+                for ($x=0; $x<count($theme); $x++){
+                    if (is_dir(VIEWDIR . "admin" . DS . $theme[$x])){
+                      if($theme[$x]!= "." && $theme[$x]!= ".."){
+                        $path_to_file = VIEWDIR . "admin" . DS . $theme[$x] . DS . "structure.pdt";
+                        $rmcode = file_put_contents($path_to_file, str_replace($findcode, $rmbcode, file_get_contents($path_to_file)));
+                      }
+                    }
+                }
+
+               //because we cannot get the ID from a field we will add the code to make the magic
+                $findcode = '<?php include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_client_count_include.pdt");?>';
+                $rmbcode = '';
+                $theme=scandir(VIEWDIR . "client");
+                for ($x=0; $x<count($theme); $x++){
+                    if (is_dir(VIEWDIR . "client" . DS . $theme[$x])){
+                      if($theme[$x]!= "." && $theme[$x]!= ".."){
+                        $path_to_file = VIEWDIR . "client" . DS . $theme[$x] . DS . "structure.pdt";
+                        $rmcode = file_put_contents($path_to_file, str_replace($findcode, $rmbcode, file_get_contents($path_to_file)));
+                      }
+                    }
+                }
+                // remove nav cache
+                array_map('unlink', glob(CACHEDIR . "1" . DS . "nav" . DS . "*.html"));
+
+			}
+
+
+			// Upgrade to 2.4.0
+			if (version_compare($current_version, "2.4.0", "<")) {
+				// Add new database tables for the knowledge base
+				$this->Record->
+					setField("id", array('type'=>"int", 'size'=>10, 'unsigned'=>true, 'auto_increment'=>true))->
+					setField("company_id", array('type'=>"int", 'size'=>10, 'unsigned'=>true))->
+					setField("access", array('type'=>"enum", 'size'=>"'public','private','hidden'", 'default'=>"public"))->
+					setField("up_votes", array('type'=>"int", 'size'=>10, 'unsigned'=>true, 'default'=>0))->
+					setField("down_votes", array('type'=>"int", 'size'=>10, 'unsigned'=>true, 'default'=>0))->
+					setField("date_created", array('type'=>"datetime"))->
+					setField("date_updated", array('type'=>"datetime"))->
+					setKey(array("id"), "primary")->
+					setKey(array("company_id", "access"), "index")->
+					create("support_kb_articlespro", true);
+				$this->Record->
+					setField("category_id", array('type'=>"int", 'size'=>10, 'unsigned'=>true))->
+					setField("article_id", array('type'=>"int", 'size'=>10, 'unsigned'=>true))->
+					setKey(array("category_id", "article_id"), "primary")->
+					create("support_kb_article_categoriespro", true);
+				$this->Record->
+					setField("article_id", array('type'=>"int", 'size'=>10, 'unsigned'=>true))->
+					setField("lang", array('type'=>"char", 'size'=>5))->
+					setField("title", array('type'=>"varchar", 'size'=>255))->
+					setField("body", array('type'=>"mediumtext"))->
+					setField("content_type", array('type'=>"enum", 'size'=>"'text','html'", 'default'=>"text"))->
+					setKey(array("article_id", "lang"), "primary")->
+					create("support_kb_article_contentpro", true);
+				$this->Record->
+					setField("id", array('type'=>"int", 'size'=>10, 'unsigned'=>true, 'auto_increment'=>true))->
+					setField("parent_id", array('type'=>"int", 'size'=>10, 'unsigned'=>true, 'is_null'=>true, 'default'=>null))->
+					setField("company_id", array('type'=>"int", 'size'=>10, 'unsigned'=>true))->
+					setField("name", array('type'=>"varchar", 'size'=>255))->
+					setField("description", array('type'=>"text", 'is_null'=>true, 'default'=>null))->
+					setField("access", array('type'=>"enum", 'size'=>"'public','private','hidden'", 'default'=>"public"))->
+					setField("date_created", array('type'=>"datetime"))->
+					setField("date_updated", array('type'=>"datetime"))->
+					setKey(array("id"), "primary")->
+					setKey(array("company_id", "parent_id", "access"), "index")->
+					create("support_kb_categoriespro", true);
+
+				// Add ACL permission for the knowledgebase
+				Loader::loadModels($this, array("Permissions"));
+				$permissions = Configure::get("SupportManagerpro.install.permissions");
+				$plugin_permission = $this->Permissions->getByAlias("support_managerpro.admin_tickets", $plugin_id);
+
+				// Add the new knowledgebase permissions
+				if ($plugin_permission && $permissions) {
+					foreach ($permissions as $set) {
+						if ($set['name'] == "SupportManagerproPlugin.permission.admin_main") {
+							foreach ($set['permissions'] as $permission) {
+								if ($permission['name'] == "SupportManagerproPlugin.permission.admin_knowledgebase") {
+									$this->Permissions->add(array(
+										'group_id' => $plugin_permission->group_id,
+										'plugin_id' => $plugin_id,
+										'name' => Language::_($permission['name'], true),
+										'alias' => $permission['alias'],
+										'action' => $permission['action']
+									));
+									if (($errors = $this->Permissions->errors()))
+										$this->Input->setErrors($errors);
+									break 2;
+								}
+							}
+						}
+					}
+				}
+			}
+
+			// Upgrade to v2.5.0
+			if (version_compare($current_version, "2.5.0", "<")) {
+				// Add a field for contacts that reply to tickets
+				$this->Record->query("ALTER TABLE `support_repliespro` ADD `contact_id` INT(10) UNSIGNED NULL DEFAULT NULL AFTER `staff_id`;");
+			}
+
+			// Upgrade to v2.6.0
+			if (version_compare($current_version, "2.6.0", "<")) {
+				// Add a new email template for when staff are assigned to a ticket
+				Loader::loadModels($this, array("Emails", "EmailGroups", "Languages"));
+				$languages = $this->Languages->getAll(Configure::get("Blesta.company_id"));
+
+				$emails = Configure::get("SupportManagerpro.install.emails");
+				foreach ($emails as $email) {
+					// Only add this one ticket assigned template if it doesn't already exist
+					if ($email['action'] != "SupportManagerpro.staff_ticket_assigned" || ($group = $this->EmailGroups->getByAction($email['action'])))
+						continue;
+
+					$group_id = $this->EmailGroups->add(array(
+						'action' => $email['action'],
+						'type' => $email['type'],
+						'plugin_dir' => $email['plugin_dir'],
+						'tags' => $email['tags']
+					));
+
+					// Set from hostname to use that which is configured for the company
+					if (isset(Configure::get("Blesta.company")->hostname))
+						$email['from'] = str_replace("@mydomain.com", "@" . Configure::get("Blesta.company")->hostname, $email['from']);
+
+					// Add the email template for each language
+					foreach ($languages as $language) {
+						$this->Emails->add(array(
+							'email_group_id' => $group_id,
+							'company_id' => Configure::get("Blesta.company_id"),
+							'lang' => $language->code,
+							'from' => $email['from'],
+							'from_name' => $email['from_name'],
+							'subject' => $email['subject'],
+							'text' => $email['text'],
+							'html' => $email['html']
+						));
+					}
+				}
+			}
+
+    	}
 	}
 	
 	/**
@@ -567,6 +835,10 @@ class SupportManagerproPlugin extends Plugin {
 				$this->Record->drop("support_responsespro");
 				$this->Record->drop("support_settingspro");
 				$this->Record->drop("support_staff_settingspro");
+				$this->Record->drop("support_kb_articlespro");
+				$this->Record->drop("support_kb_article_categoriespro");
+				$this->Record->drop("support_kb_article_contentpro");
+				$this->Record->drop("support_kb_categoriespro");
 			}
 			catch (Exception $e) {
 				// Error dropping... no permission?
@@ -629,8 +901,8 @@ class SupportManagerproPlugin extends Plugin {
 			}
 		}
 
-               //because we cannot get the ID from a field we will add the code to make the magic
-                $findcode = '<?include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?>';
+               /*because we cannot get the ID from a field we will add the code to make the magic
+                $findcode = '<?php include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?>';
                 $rmbcode = '';
                 $theme=scandir(VIEWDIR . "admin");
                 for ($x=0; $x<count($theme); $x++){
@@ -643,17 +915,20 @@ class SupportManagerproPlugin extends Plugin {
                 }
 
                //because we cannot get the ID from a field we will add the code to make the magic
-                $findcode = '</body>';
-                $putbcode = '<?include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_count_include.pdt");?></body>';
-                $theme=scandir(VIEWDIR . "admin");
+                $findcode = '<?php include(PLUGINDIR . DS . "support_managerpro" . DS . "views" . DS . "default" . DS . "admin_support_managerpro_client_count_include.pdt");?>';
+                $rmbcode = '';
+                $theme=scandir(VIEWDIR . "client");
                 for ($x=0; $x<count($theme); $x++){
-                    if (is_dir(VIEWDIR . "admin" . DS . $theme[$x])){
+                    if (is_dir(VIEWDIR . "client" . DS . $theme[$x])){
                       if($theme[$x]!= "." && $theme[$x]!= ".."){
-                        $path_to_file = VIEWDIR . "admin" . DS . $theme[$x] . DS . "structure.pdt";
-                        $putcode = file_put_contents($path_to_file, str_replace($findcode, $putbcode, file_get_contents($path_to_file)));
+                        $path_to_file = VIEWDIR . "client" . DS . $theme[$x] . DS . "structure.pdt";
+                        $rmcode = file_put_contents($path_to_file, str_replace($findcode, $rmbcode, file_get_contents($path_to_file)));
                       }
                     }
-                }
+                }*/
+
+        // remove nav cache
+        array_map('unlink', glob(CACHEDIR . "1" . DS . "nav" . DS . "*.html"));
 
 	}
 	
@@ -672,7 +947,19 @@ class SupportManagerproPlugin extends Plugin {
 			array(
 				'action' => "nav_primary_client",
 				'uri' => "plugin/support_managerpro/client_main/",
-				'name' => Language::_("SupportManagerproPlugin.nav_primary_client.main", true)
+				'name' => Language::_("SupportManagerproPlugin.nav_primary_client.main", true),
+				'options' => array(
+					'sub' => array(
+						array(
+							'uri' => "plugin/support_managerpro/client_tickets/",
+							'name' => Language::_("SupportManagerproPlugin.nav_primary_client.tickets", true)
+						),
+						array(
+							'uri' => "plugin/support_managerpro/knowledgebase/",
+							'name' => Language::_("SupportManagerproPlugin.nav_primary_client.knowledgebase", true)
+						)
+					)
+				)
 			),
 			// Staff Nav
 			array(
@@ -696,6 +983,10 @@ class SupportManagerproPlugin extends Plugin {
 						array(
 							'uri' => "plugin/support_managerpro/admin_staff/",
 							'name' => Language::_("SupportManagerproPlugin.nav_primary_staff.staff", true)
+						),
+						array(
+							'uri' => "plugin/support_managerpro/admin_knowledgebase/",
+							'name' => Language::_("SupportManagerproPlugin.nav_primary_staff.knowledgebase", true)
 						)
 					)
 				)
@@ -727,12 +1018,17 @@ class SupportManagerproPlugin extends Plugin {
 	 */	
 	public function getEvents() {
 		return array(
+            array(
+                'event' => "Appcontroller.structure",
+                'callback' => array("this", "SupportProaddCode")
+            ),
 			array(
 				'event' => "Navigation.getSearchOptions",
 				'callback' => array("this", "getSearchOptions")
 			)
 		);
 	}
+
 	
 	/**
 	 * Returns the search options to append to the list of staff search options
@@ -740,7 +1036,7 @@ class SupportManagerproPlugin extends Plugin {
 	 * @param EventObject $event The event to process
 	 */
 	public function getSearchOptions($event) {
-		
+
 		$params = $event->getParams();
 		
 		if (isset($params['options']))
@@ -852,5 +1148,97 @@ class SupportManagerproPlugin extends Plugin {
 			}
 		}
 	}
+
+	/**
+	 * On Appcontroller.structure run this
+	 */
+    public function SupportProaddCode($event) {
+        // Fetch current return val
+        $result = $event->getReturnVal();
+
+        $params = $event->getParams();
+
+        // Set return val if not set
+        if (!isset($result['body_end']))
+                $result['body_end'] = null;
+
+        // Set return val if not set
+        if (!isset($result['head']))
+                $result['head'] = null;
+
+            $result['head']["supportproincludeadmin"] = '
+<style type="text/css">
+<!--
+.spro_badge {
+    top: -8px;
+    font-size: 10px;
+    font-weight: 700;
+    float: none !important; position: relative;
+    padding: 2px 5px 3px 5px;color: #fff;
+    background-image: linear-gradient(#fa3c45, #dc0d17);
+    background-image: -webkit-gradient(linear, center top, center bottom, from(#fa3c45), to(#dc0d17));
+    background-image: -webkit-linear-gradient(#fa3c45, #dc0d17);
+    -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, .7);
+    box-shadow: 0px 1px 1px rgba(0,0,0,0.7);
+    text-shadow: 0px -1px 0px rgba(0,0,0,0.4);
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;border-radius: 10px;
+}
+-->
+</style>
+';
+
+        // Update return val -- ONLY set if admin portal
+        if ($params['portal'] == "admin")
+            $result['body_end']["supportproincludeadmin"] = "
+<!-- display admin ticket count menu badge-->
+<script>
+jQuery(function($){
+if( $(\"a[href='".WEBDIR.Configure::get("Route.admin")."/plugin/support_managerpro/admin_main/']\").length )
+{
+  $( document ).ready(function() {
+    $.get( '".WEBDIR.Configure::get("Route.admin")."/plugin/support_managerpro/admin_tickets_count/', function(newRowCount){
+      $(\"a[href='".WEBDIR.Configure::get("Route.admin")."/plugin/support_managerpro/admin_main/']\").html( newRowCount.trim() );
+    });
+  });
+  setInterval(function(){
+    $.get( '".WEBDIR.Configure::get("Route.admin")."/plugin/support_managerpro/admin_tickets_count/', function(newRowCount){
+      $(\"a[href='".WEBDIR.Configure::get("Route.admin")."/plugin/support_managerpro/admin_main/']\").html( newRowCount.trim() );
+    });
+  },5000);
+}
+});
+</script>
+<!-- end display admin ticket count menu badge-->
+";
+
+        // Update return val -- ONLY set if client portal
+        if ($params['portal'] == "client")
+            $result['body_end']["supportproincludeclient"] = "
+<!-- display admin ticket count menu badge-->
+<script>
+jQuery(function($){
+if( $(\"a[href='".WEBDIR.Configure::get("Route.client")."/plugin/support_managerpro/client_main/']\").length )
+{
+  $( document ).ready(function() {
+    $.get( '".WEBDIR.Configure::get("Route.admin")."/plugin/support_managerpro/client_tickets_count/', function(newRowCount){
+      $(\"a[href='".WEBDIR.Configure::get("Route.client")."/plugin/support_managerpro/client_main/']\").html( newRowCount.trim() );
+    });
+  });
+  setInterval(function(){
+    $.get( '".WEBDIR.Configure::get("Route.admin")."/plugin/support_managerpro/client_tickets_count/', function(newRowCount){
+      $(\"a[href='".WEBDIR.Configure::get("Route.client")."/plugin/support_managerpro/client_main/']\").html( newRowCount.trim() );
+    });
+  },5000);
+}
+});
+</script>
+<!-- end display admin ticket count menu badge-->
+";
+
+
+        // Update return val
+        $event->setReturnVal($result);
+    }
 }
 ?>

@@ -185,22 +185,30 @@ class TicketManagerpro {
 					// If the reply was not from a staff member, it must have been the client
 					else {
 						$reply['client_id'] = $ticket->client_id;
+
+						// Check if one of the client's contacts replied
+						if (($contact = $this->SupportManagerproTickets->getContactByEmail($reply['client_id'], $from)) && $contact->contact_type != "primary")
+							$reply['contact_id'] = $contact->id;
 						
 						// If the ticket was previously awaiting this client's reply change it back to open
 						if ($ticket->status == "awaiting_reply")
 							$reply['status'] = "open";
 					}
-					
+
+                    // Fetch the department
+                    if ($department === null)
+                        $department = $this->SupportManagerproDepartments->get($ticket->department_id);
+
 					// Check if only clients are allowed to reply to tickets
-					if ($reply['staff_id'] == null && $reply['client_id'] == null &&
-						($department = $this->SupportManagerproDepartments->get($ticket->department_id)) && $department->clients_only) {
+					if ($reply['staff_id'] == null && $reply['client_id'] == null && $department && $department->clients_only) {
+
 						// Only clients are allowed to reply to tickets
 						$this->sendBounceNotice($email);
 						return;
 					}
 					
 					$reply_id = $this->SupportManagerproTickets->addReply($ticket->id, $reply, $files);
-					
+
 					if (!$reply_id) {
 						// Ticket reply failed
 						$this->sendBounceNotice($email, $reply['client_id']);
@@ -208,7 +216,7 @@ class TicketManagerpro {
 					else {
 						// Don't allow reply to be sent if enough emails have been sent to this
 						// address within the given window of time
-						if ($this->SupportManagerproTickets->checkLoopBack($email, $this->max_reply_limit, $this->reply_period)) {
+                        if ($department && $this->SupportManagerproTickets->checkLoopBack($department->email, $this->max_reply_limit, $this->reply_period)) {
 							// Send the email associated with this ticket
 							$key = mt_rand();
 							$hash = $this->SupportManagerproTickets->generateReplyHash($ticket->id, $key);
@@ -252,7 +260,11 @@ class TicketManagerpro {
 						$client_id = $client->id;
 					else
 						$from_email = $from;
-					
+
+					// Ignore tickets opened by the support department itself
+					if ($department->email == $from_email)
+						return;
+
 					// Check if only clients are allowed to open tickets
 					if ($client_id == null && $department->clients_only) {
 						// Only clients are allowed to open tickets
@@ -298,8 +310,13 @@ class TicketManagerpro {
 						'details' => $body
 					);
 					
-					if ($client_id)
+					if ($client_id) {
 						$reply['client_id'] = $client_id;
+
+						// Check if one of the client's contacts created the ticket
+						if (($contact = $this->SupportManagerproTickets->getContactByEmail($reply['client_id'], $from)) && $contact->contact_type != "primary")
+							$reply['contact_id'] = $contact->id;
+					}
 
 					$reply_id = $this->SupportManagerproTickets->addReply($ticket_id, $reply, $files, true);
 					

@@ -14,6 +14,11 @@ Configure::set("SupportManagerpro.summary_default", "N/A");
 // Ticket number code length in number of digits. In case of conflicts (duplicate ticket codes) because of a large number of tickets, increase this number.
 Configure::set("SupportManagerpro.ticket_code_length", 7);
 
+// The maximum number of popular Knowledgebase articles to show
+Configure::set("SupportManagerpro.max_kb_popular_articles", 5);
+// The max number of characters in an article title to set in the URI, separated on words
+Configure::set("SupportManagerpro.max_chars_article_title_uri", 50);
+
 // Emails
 Configure::set("SupportManagerpro.install.emails", array(
 	array(
@@ -140,6 +145,28 @@ Ticket #: {ticket.code} | Status: {ticket.status_language} | Priority: {ticket.p
 <p>
 	&nbsp;</p>
 "
+	),
+	array(
+		'action' => "SupportManagerpro.staff_ticket_assigned",
+		'type' => "staff",
+		'plugin_dir' => "support_managerpro",
+		'tags' => "{ticket},{staff.first_name},{staff.last_name}",
+		'from' => "support@mydomain.com",
+		'from_name' => "Support",
+		'subject' => "Ticket #{ticket.code} has been assigned to you",
+		'text' => "{staff.first_name},
+
+A ticket has been assigned to you.
+
+--
+
+Ticket #: {ticket.code} | Status: {ticket.status_language} | Priority: {ticket.priority_language} | Department: {ticket.department_name}
+",
+		'html' => "<p>{staff.first_name},</p>
+<p>A ticket has been assigned to you.</p>
+<p>--</p>
+<p>Ticket #: {ticket.code} | Status: {ticket.status_language} | Priority: {ticket.priority_language} | Department: {ticket.department_name}</p>
+"
 	)
 ));
 
@@ -175,6 +202,11 @@ Configure::set("SupportManagerpro.install.permissions", array(
 				'name' => "SupportManagerproPlugin.permission.admin_staff",
 				'alias' => "support_managerpro.admin_staff",
 				'action' => "*"
+			),
+			array(
+				'name' => "SupportManagerproPlugin.permission.admin_knowledgebase",
+				'alias' => "support_managerpro.admin_knowledgebase",
+				'action' => "*"                
 			)
 		)
 	)

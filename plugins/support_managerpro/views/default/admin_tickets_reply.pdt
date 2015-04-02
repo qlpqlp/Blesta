@@ -1,4 +1,5 @@
-
+									<div class="inner_content" style="float: left; width: 100%">
+										<div>
 				<?php
 				echo $this->Html->ifSet($message);
 
@@ -7,6 +8,7 @@
 				$this->Widget->create($this->_("AdminTickets.reply.boxtitle_reply", true, $this->Html->ifSet($ticket->code)), array('id' => "admin_tickets_reply"));
 				?>
 				<div class="inner">
+
 					<table class="table">
 						<tr class="heading_row">
 							<td><?php $this->_("AdminTickets.reply.heading_client");?></td>
@@ -105,6 +107,9 @@
 										<li>
 											<a href="#" class="note"><?php $this->Form->label($this->_("AdminTickets.reply.field_note", true), "note");?></a>
 										</li>
+										<li>
+											<a href="#" class="services"><?php $this->Form->label($this->_("AdminTickets.reply.services", true), "services");?></a>
+										</li>
 									</ul>
 									<div class="inner_content">
 										<div>
@@ -118,6 +123,25 @@
 										</div>
 										<div>
 											<?php $this->Form->fieldTextarea("notes", $this->Html->ifSet($vars->notes), array('id'=>"note_details"));?>
+										</div>
+										<div>
+								<?php
+								if (!empty($client)) {
+								?>
+                                <style type="text/css">
+                                <!--
+                                #admin_clients_invoices, #admin_clients_transactions, #plugin_support_managerpro_admin_tickets_client, #plugin_support_manager_admin_tickets_client{
+                                  display: none;
+                                }
+
+                                -->
+                                </style>
+                                <div class="column section1" style="margin-top: -9px; margin-right: -8px; margin-left: -8px"></div>
+                                <?php
+                                }else{
+                                echo $this->Form->label($this->_("AdminTickets.reply.no_services", true), "no_services");
+                                }
+                                ?>
 										</div>
 									</div>
 								</div>
@@ -144,7 +168,10 @@
 					
 					<?php
 					$this->Form->create($this->base_uri . "plugin/support_managerpro/admin_tickets/replyaction/" . $this->Html->ifSet($ticket->id) . "/", array('id' => "ticket_replies"));
-					
+
+                    $islast = 0;
+                    $totalreplies = count($this->Html->ifSet($ticket->replies, array()));
+
 					foreach ($this->Html->ifSet($ticket->replies, array()) as $reply) {
 						if ($this->Html->ifSet($reply->staff_id) != "") {
 							$first_name = $this->Html->ifSet($reply->first_name, $this->_("AdminTickets.reply.system", true));
@@ -174,7 +201,7 @@
 							</div>
 							<div class="options">
 								<?php
-								$this->Form->fieldCheckbox("replies[]", $this->Html->ifSet($reply->id), false, array('class'=>"replies"));
+							   if ($islast != ($totalreplies-1)) {$this->Form->fieldCheckbox("replies[]", $this->Html->ifSet($reply->id), false, array('class'=>"replies"));}
 								?>
 							</div>
 							<div class="clear"></div>
@@ -226,7 +253,7 @@
 							}
 							?>
 							<div id="<?php echo $reply->id; ?>" class="response">
-								<?php echo $this->TextParser->encode("markdown", $this->Html->_($reply->details, true));?>
+                                <?php echo $this->TextParser->encode("markdown", $this->Html->ifSet($reply->details));?>
 							</div>
                             <div id="response_q<?php echo $reply->id; ?>" style="display: none">
 								<?php echo $this->Html->_($reply->details, true);?>
@@ -251,12 +278,13 @@
 						?>
 					</div>
 					<?php
+                    $islast++;
 					}
 					?>
 					<div id="ticket_actions" style="display:none;">
 						<div class="left">
 							<span><?php $this->_("AdminTickets.reply.text_with_selected");?></span>
-							<?php $this->Form->fieldSelect("action", $this->Html->ifSet($ticket_actions));?>
+                            <?php $this->Form->fieldSelect("action", $this->Html->ifSet($ticket_actions), "", array('id' => "reply_action"));?>
 						</div>
 						<a class="btn_right submit" href="#"><?php $this->_("AdminTickets.reply.field_actionsubmit");?></a>
 					</div>
@@ -267,15 +295,60 @@
 				<?php
 				$this->Widget->end();
 				?>
+				</div>
+                </div>
 
 <?php
+if ($this->Html->_($content, true) == "") {
+	$this->Javascript->setInline('
+		$(document).ready(function() {
+			$(".column").blestaLoadWidgets({
+				fetch_uri: "' . $this->Html->safe($this->base_uri . "clients/getwidgets/" . $this->Html->ifSet($client->id), true) . '",
+				update_uri: "' . $this->Html->safe($this->base_uri . "clients/reorderwidgets/") . '",
+				toggle_uri: "' . $this->Html->safe($this->base_uri . "clients/togglewidget/") . '"
+			});
+		});
+	');
+}
 $this->Javascript->setInline("
 	$(document).ready(function() {
 		if ($('#reply_type').val() == 'note') {
 			$('.tab_content .tabs li').attr('class', '');
 			$(this).find('a.note').parent('li').attr('class', 'current');
 		}
+		// Quote replies
+		$('body').on('submit', 'form#ticket_replies', function(e) {
+			if ($('#reply_action').val() == 'quote') {
+				var reply_ids = [];
 
+				$('.replies').each(function() {
+					if ($(this).prop('checked')) {
+						reply_ids.push($(this).val());
+						$(this).prop('checked', false);
+					}
+				}).trigger('change');
+
+				reply_ids = reply_ids.join();
+				$(document).blestaRequest('POST', '" . $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_tickets/getquotedreplies/" . $this->Html->ifSet($ticket->id) . "/") . "',
+					{ _csrf_token: $(this).find('input[name=_csrf_token]').val(), reply_ids:reply_ids},
+					function(data) {
+						$('#reply_details').focus();
+
+						if (data) {
+							$('#reply_details').val(($('#reply_details').val() + data + '\\n\\n'));
+						}
+
+						$('#reply_details').scrollTop($('#reply_details')[0].scrollHeight);
+
+					},
+					null,
+					{dataType:'json'}
+				);
+
+				e.preventDefault();
+				return false;
+			}
+		});
 		// Toggle predefined responses
 		$(this).blestaBindToggleEvent('#add_predefined_response', '#predefined_responses');
 		$('#add_predefined_response').click(function() {

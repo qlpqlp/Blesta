@@ -1,0 +1,47 @@
+
+				<div class="col-md-12">
+					<div class="row">
+						<div class="col-md-12">
+							<?php
+							echo $this->Html->ifSet($search_bar);
+							echo $this->Html->ifSet($bread_crumbs);
+							?>
+						</div>
+					</div>
+					<div class="section-title">
+						<h3>
+							<i class="fa fa-file-text"></i>
+							<?php $this->_("Knowledgebase.search.heading_articles", false, $this->Html->_($vars->search, true));?>
+						</h3>
+					</div>
+					<div class="categories">
+						<?php
+						if (!empty($articles)) {
+							foreach ($this->Html->ifSet($articles, array()) as $article) {
+							?>
+						<div class="col-md-12">
+							<i class="fa fa-file-o"></i>
+							<a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/knowledgebase/view/" . $this->Html->ifSet($article->id) . "/" . $this->Html->ifSet($article->uri_title) . "/");?>">
+								<?php $this->Html->_($article->title);?>
+							</a>
+						</div>
+							<?php
+							}
+						}
+						else {
+						?>
+						<div class="alert alert-info">
+							<p><?php $this->_("Knowledgebase.search.articles_no_results");?></p>
+						</div>
+						<?php
+						}
+						?>
+					</div>
+					<div class="clearfix"></div>
+					
+					<div class="row">
+						<div class="col-md-12">
+							<?php $this->Pagination->build();?>
+						</div>
+					</div>
+				</div>

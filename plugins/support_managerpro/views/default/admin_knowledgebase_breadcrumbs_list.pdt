@@ -1,0 +1,36 @@
+<?php
+// Link to the root directory
+if ($this->Html->ifSet($current_category, null) !== null) {
+?>
+<a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_knowledgebase/");?>">
+<?php
+}
+
+$this->_("AdminKnowledgebase.!text.root_directory");
+
+if ($this->Html->ifSet($current_category, null) !== null) {
+?>
+</a>
+<?php
+}
+
+foreach ($this->Html->ifSet($categories, array()) as $category) {
+	$this->_("AdminKnowledgebase.!text.directory_separator");
+	
+	// Link to this category as long as it's not the current category
+	if ($this->Html->ifSet($current_category->id) != $this->Html->ifSet($category->id)) {
+?>
+<a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_knowledgebase/index/" . $this->Html->ifSet($category->id));?>">
+	<?php
+	}
+	
+	// Display the category name
+	echo $this->Html->concat(" ", " ", $this->Html->_($category->name, true));
+	
+	if ($this->Html->ifSet($current_category->id) != $this->Html->ifSet($category->id)) {
+	?>
+</a>
+<?php
+	}
+}
+?>

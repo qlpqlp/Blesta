@@ -30,8 +30,7 @@ $lang['AdminTickets.index.category_awaiting_reply'] = "Awaiting Reply";
 $lang['AdminTickets.index.category_in_progress'] = "In Progress";
 $lang['AdminTickets.index.category_closed'] = "Closed";
 $lang['AdminTickets.index.category_spam'] = "Spam";
-$lang['AdminTickets.index.category_deleted'] = "Delete";
-$lang['AdminTickets.index.category_pdelete'] = "Permanent Delete";
+$lang['AdminTickets.index.category_deleted'] = "Trash";
 
 $lang['AdminTickets.index.categorylink_createticket'] = "Open Ticket";
 
@@ -87,6 +86,7 @@ $lang['AdminTickets.add.text_add_response'] = "Insert a Predefined Response";
 // Reply
 $lang['AdminTickets.reply.boxtitle_reply'] = "Ticket #%1\$s"; // %1$s is the ticket number
 
+$lang['AdminTickets.reply.services'] = "Services";
 $lang['AdminTickets.reply.heading_summary'] = "Summary";
 
 $lang['AdminTickets.reply.heading_client'] = "Client";
@@ -111,6 +111,9 @@ $lang['AdminTickets.reply.reply_date'] = "On %1\$s %2\$s %3\$s replied"; // %1$s
 $lang['AdminTickets.reply.log_date'] = "%1\$s by %2\$s %3\$s"; // %1$s is the ticket reply date, %2$s is the first name of the reply author, %3$s is the last name of the reply author
 $lang['AdminTickets.reply.system'] = "System";
 $lang['AdminTickets.reply.staff_title'] = "Support Staff";
+
+$lang['AdminTickets.reply.services'] = "List Services";
+$lang['AdminTickets.reply.no_services'] = "No services found.";
 
 
 // Client widget

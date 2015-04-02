@@ -1,0 +1,93 @@
+
+				<div class="col-md-12">
+					<div class="row">
+						<div class="col-md-12">
+							<?php
+							echo $this->Html->ifSet($search_bar);
+							echo $this->Html->ifSet($bread_crumbs);
+							?>
+						</div>
+					</div>
+					<div class="section-title">
+						<h3><?php $this->Html->_($article->title);?></h3>
+					</div>
+					<div class="article">
+						<?php echo $Markdown->text($this->Html->ifSet($article->body));?>
+					</div>
+					<?php
+					if ($this->Html->ifSet($is_admin)) {
+					?>
+					<div class="row edit">
+						<div class="col-md-12">
+							<a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/admin_knowledgebase/edit/" . $this->Html->ifSet($article->id) . "/");?>" class="btn btn-default btn-sm" target="_blank"><i class="fa fa-edit"></i> <?php $this->_("Knowledgebase.view.edit");?></a>
+						</div>
+					</div>
+					<?php
+					}
+					?>
+					<div class="row">
+						<div class="rate">
+							<h4><?php $this->_("Knowledgebase.view.text_rate");?></h4>
+							<?php
+							$this->Form->create($this->base_uri . "plugin/support_managerpro/knowledgebase/vote/", array('id'=>"rate"));
+							$this->Form->fieldHidden("direction", "", array('id' => "direction"));
+							?>
+							<p>
+								<a href="#" class="green btn btn-lg btn-default<?php echo $this->Html->ifSet($voted) ? " disabled" : "";?>"><i class="fa fa-thumbs-up fa-fw"></i> <span><?php $this->Html->_($article->up_votes);?></span></a>
+								<a href="#" class="red btn btn-lg btn-default<?php echo $this->Html->ifSet($voted) ? " disabled" : "";?>"><i class="fa fa-thumbs-up fa-fw fa-rotate-180"></i> <span><?php $this->Html->_($article->down_votes);?></span></a>
+							</p>
+							<?php
+							if ($this->Html->ifSet($voted)) {
+							?>
+							<p class="voted">
+								<?php $this->_("Knowledgebase.view.text_voted");?>
+							</p>
+							<?php
+							}
+							else {
+							?>
+							<p class="voted" style="display:none;">
+								<?php $this->_("Knowledgebase.view.text_vote_thanks");?>
+							</p>
+							<?php
+							}
+							
+							$this->Form->end();
+							?>
+						</div>
+					</div>
+					<div class="clearfix"></div>
+				</div>
+<script type="text/javascript">
+$(document).ready(function() {
+	$('#rate a').on('click', function(e) {
+		e.preventDefault();
+		
+		var direction = ($(this).hasClass('green') ? 'up' : 'down');
+		$('#direction').val(direction);
+		
+		$('#rate').trigger('submit');
+		return false;
+	});
+	
+	$('#rate').on('submit', function(e) {
+		e.preventDefault();
+		
+		$(this).blestaRequest('POST', '<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/knowledgebase/rate/" . $this->Html->ifSet($article->id) . "/");?>', $(this).serialize(),
+			function(data) {
+				if (data.direction && data.rating) {
+					var attr_class = (data.direction == 'up' ? 'green' : 'red');
+					$('#rate a.' + attr_class + ' span').html(data.rating);
+					
+					$('#rate a.green, #rate a.red').addClass('disabled');
+					$('#rate p.voted').show();
+				}
+			},
+			null,
+			{dataType: 'json'}
+		);
+		
+		return false;
+	});
+});
+</script>

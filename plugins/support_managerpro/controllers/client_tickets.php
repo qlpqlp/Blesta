@@ -9,7 +9,7 @@
  * @link http://www.blesta.com/ Blesta
  */
 class ClientTickets extends SupportManagerproController {
-	
+
 	/**
 	 * Setup
 	 */
@@ -28,6 +28,12 @@ class ClientTickets extends SupportManagerproController {
 		$this->structure->setView(null, $this->orig_structure_view);
 		
 		$this->client_id = $this->Session->read("blesta_client_id");
+
+		// Fetch contact that is logged in, if any
+		if (!isset($this->Contacts))
+			$this->uses(array("Contacts"));
+		$this->contact = $this->Contacts->getByUserId($this->Session->read("blesta_id"), $this->client_id);
+
 
 		$this->set("string", $this->DataStructure->create("string"));
 	}
@@ -134,11 +140,16 @@ class ClientTickets extends SupportManagerproController {
 			
 			// Refuse impersonations
 			unset($data['staff_id'], $data['client_id']);
-			
+
 			// Set client iff logged in
-			if ($logged_in)
+			if ($logged_in) {
 				$data['client_id'] = $this->client_id;
-			
+
+				// Set contact that is replying
+				if ($this->contact)
+					$data['contact_id'] = $this->contact->id;
+			}
+
 			// Create a transaction
 			$this->SupportManagerproTickets->begin();
 			
@@ -168,7 +179,7 @@ class ClientTickets extends SupportManagerproController {
 				
 				// Send the email associated with this ticket
 				$this->SupportManagerproTickets->sendEmail($reply_id);
-				
+
 				$ticket = $this->SupportManagerproTickets->get($ticket_id);
 				$this->flashMessage("message", Language::_("ClientTickets.!success.ticket_created", true, $ticket->code), null, false);
 				$redirect_url = $this->base_uri . "plugin/support_managerpro/client_tickets/";
@@ -177,7 +188,7 @@ class ClientTickets extends SupportManagerproController {
 				$this->redirect($redirect_url);
 			}
 		}
-		
+
 		// Set default department priority
 		if (!isset($vars))
 			$vars = (object)array('priority' => $department->default_priority);
@@ -275,6 +286,7 @@ class ClientTickets extends SupportManagerproController {
 			$data = $this->post;
 			$data['type'] = "reply";
 			$data['staff_id'] = null;
+            $data['contact_id'] = ($this->contact ? $this->contact->id : null);            
 			
 			// Remove ability to change ticket options
 			unset($data['department_id'], $data['summary'], $data['priority'], $data['status'], $data['ticket_staff_id']);

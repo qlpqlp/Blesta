@@ -60,16 +60,17 @@ class EmailParser {
 		$text = $this->getBody($email, "text");
 		
 		if ($text == "") {
-			if (!class_exists("html2text"))
-				Loader::load(PLUGINDIR . "support_managerpro" . DS . "vendors" . DS . "html2text" . DS . "html2text.class.php");
-			
+			if (!isset($this->Html2text)) {
+                Loader::loadHelpers($this, array("TextParser"));
+                $this->Html2text = $this->TextParser->create("html2text");
+			}
+
 			$html = $this->getBody($email, "html");
-			$html2text = new html2text($html);
-			unset($html);
-			$text = $html2text->get_text();
-			unset($html2text);
+            $this->Html2text->set_html($html);
+            $text = $this->Html2text->get_text();
+            unset($html, $this->Html2text);
 		}
-		
+
 		return $text;
 	}
 	

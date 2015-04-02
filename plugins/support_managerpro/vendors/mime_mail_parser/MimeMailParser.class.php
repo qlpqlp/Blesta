@@ -536,7 +536,7 @@ class MimeMailParser
         fseek($this->stream, $start, SEEK_SET);
         $len = $end - $start;
         $written = 0;
-        $write = 2028;
+        $write = min($len, 2028);
         $body = '';
         while ($written < $len)
         {

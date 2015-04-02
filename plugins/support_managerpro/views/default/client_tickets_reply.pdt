@@ -131,7 +131,7 @@
 						<?php
 						}
 						
-						echo $this->TextParser->encode("markdown", $this->Html->_($reply->details, true));
+                        echo $this->TextParser->encode("markdown", $this->Html->ifSet($reply->details));
 						?>
 					</div>
 				</div>

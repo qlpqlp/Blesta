@@ -1,0 +1,90 @@
+
+				<div class="col-md-12">
+					<div class="row">
+						<div class="col-md-12">
+							<?php
+							echo $this->Html->ifSet($search_bar);
+							echo $this->Html->ifSet($bread_crumbs);
+							?>
+						</div>
+					</div>
+					<?php
+					// Always show categories when viewing the home category, but only show subcategories when some exist
+					if ($this->Html->ifSet($current_category, null) === null || ($this->Html->ifSet($current_category, null) !== null && !empty($categories))) {
+					?>
+					<div class="section-title">
+						<h3>
+							<i class="fa fa-folder-open"></i>
+							<?php
+							if ($this->Html->ifSet($current_category))
+								$this->_("Knowledgebase.index.heading_subcategories");
+							else
+								$this->_("Knowledgebase.index.heading_categories");
+							?>
+						</h3>
+						<p><?php $this->_("Knowledgebase.index.categories_description");?></p>
+					</div>
+					<div class="categories">
+						<?php
+						if (!empty($categories)) {
+							foreach ($categories as $category) {
+						?>
+						<div class="col-md-4 col-sm-6">
+							<i class="fa fa-folder-o"></i>
+							<a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/knowledgebase/index/" . $this->Html->ifSet($category->id) . "/");?>"><?php $this->Html->_($category->name);?></a>
+							<?php
+							$this->_("Knowledgebase.index.category_items", false, $this->Html->_($category->total_items, true));
+							echo $this->TextParser->encode("markdown", $this->Html->ifSet($category->description));
+							?>
+						</div>
+						<?php
+							}
+						}
+						else {
+						?>
+						<div class="alert alert-info">
+							<p><?php $this->_("Knowledgebase.index.categories_no_results");?></p>
+						</div>
+						<?php
+						}
+						?>
+					</div>
+					<div class="clearfix"></div>
+					<?php
+					}
+					
+					// Show popular articles and articles
+					$article_types = array("popular_articles", "articles");
+					foreach ($article_types as $type) {
+						$popular = ($type == "popular_articles");
+						$article_list = ($popular ? $this->Html->ifSet($popular_articles, array()) : $this->Html->ifSet($articles, array()));
+						if (empty($article_list))
+							continue;
+						
+					?>
+					<div class="section-title">
+						<h3>
+							<i class="fa <?php echo ($popular ? "fa-thumbs-up" : "fa-file-text");?>"></i>
+							<?php echo ($popular ? $this->_("Knowledgebase.index.heading_popular", true) : $this->_("Knowledgebase.index.heading_articles", true));?>
+						</h3>
+						<p><?php echo ($popular ? $this->_("Knowledgebase.index.popular_description", true) : $this->_("Knowledgebase.index.articles_description", true, $this->Html->_($current_category->name, true)));?></p>
+					</div>
+					<div class="categories">
+						<?php
+						foreach ($article_list as $article) {
+						?>
+						<div class="col-md-12">
+							<i class="fa fa-file-o"></i>
+							<a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/knowledgebase/view/" . $this->Html->ifSet($article->id) . "/" . $this->Html->ifSet($article->uri_title) . "/" . ($this->Html->ifSet($current_category) ? $this->Html->ifSet($current_category->id) . "/" : ""));?>">
+								<?php $this->Html->_($article->title);?>
+							</a>
+						</div>
+						<?php
+						}
+						?>
+					</div>
+					<div class="clearfix"></div>
+					<?php
+					}
+					?>
+				</div>

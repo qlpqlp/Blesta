@@ -91,7 +91,8 @@ class AdminDepartments extends SupportManagerproController {
 				$this->setMessage("error", $errors, false, null, false);
 			}
 			else {
-				// Success
+				// Success, add this staff member to this department
+                $this->addStaff($department->id);
 				$this->flashMessage("message", Language::_("AdminDepartments.!success.department_created", true, $department->name), null, false);
 				$this->redirect($this->base_uri . "plugin/support_managerpro/admin_departments/");
 			}
@@ -273,5 +274,66 @@ class AdminDepartments extends SupportManagerproController {
 		echo $this->Json->encode($response);
 		return false;
 	}
+    /**
+     * Assigns the staff member to this department
+     * @see AdminDepartments::add()
+     *
+     * @param int $department_id The ID of the department to add the staff to
+     */
+    private function addStaff($department_id) {
+        $this->uses(array("SupportManagerpro.SupportManagerproStaff"));
+
+        $support_staff = $this->SupportManagerproStaff->get($this->staff_id, $this->company_id);
+
+        // Create a new staff member
+        if (!$support_staff) {
+            // Build default staff schedules to all day, every day
+            $schedules = array();
+            $days = $this->SupportManagerproStaff->getDays();
+            foreach (array_keys($days) as $day) {
+                $schedules[] = array('day' => $day, 'all_day' => 1);
+            }
+
+            // Default to receive ticket emails for all priorities
+            $settings = array('ticket_emails' => array());
+            $department_priorities = $this->SupportManagerproDepartments->getPriorities();
+            foreach ($department_priorities as $key => $language)
+                $settings['ticket_emails'][$key] = "true";
+
+            // Create the staff member and assign them to this department
+            $vars = array(
+                'staff_id' => $this->staff_id,
+                'company_id' => $this->company_id,
+                'departments' => array($department_id),
+                'schedules' => $schedules,
+                'settings' => $settings
+            );
+            $this->SupportManagerproStaff->add($vars);
+        }
+        else {
+            // Re-save the support staff member while also assigning this department to them
+            $schedules = array();
+            $i = 0;
+            foreach ($support_staff->schedules as $schedule) {
+                // Format the schedule time
+                $schedules[$i]['day'] = $schedule->day;
+                $schedules[$i]['start_time'] = $this->Date->cast($schedule->start_time, Configure::get("SupportManagerpro.time_format"));
+                $schedules[$i]['end_time'] = $this->Date->cast($schedule->end_time, Configure::get("SupportManagerpro.time_format"));
+                $i++;
+            }
+
+            $departments = array($department_id);
+            foreach ($support_staff->departments as $department)
+                $departments[] = $department->id;
+
+            $vars = array(
+                'company_id' => $support_staff->company_id,
+                'departments' => $departments,
+                'schedules' => $schedules
+            );
+
+            $this->SupportManagerproStaff->edit($support_staff->id, $vars);
+        }
+    }
 }
 ?>

@@ -1,0 +1,45 @@
+
+					
+							<div class="breadcrumbs">
+								<ol class="breadcrumb">
+									<li>
+										<a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/knowledgebase/");?>"><?php $this->_("Knowledgebase.!text.root_directory");?></a>
+									</li>
+									<?php
+									foreach ($this->Html->ifSet($categories, array()) as $category) {
+										$active = (empty($article) && ($this->Html->ifSet($current_category->id, false) == $this->Html->ifSet($category->id)));
+									?>
+									<li<?php echo $active ? " class=\"active\"" : "";?>>
+										<?php
+										if (!$active) {
+										?>
+										<a href="<?php echo $this->Html->safe($this->base_uri . "plugin/support_managerpro/knowledgebase/index/" . $this->Html->ifSet($category->id) . "/");?>">
+										<?php
+										}
+										
+										$this->Html->_($category->name);
+										
+										if (!$active) {
+										?>
+										</a>
+										<?php
+										}
+										?>
+									</li>
+									<?php
+									}
+									
+									if ($this->Html->ifSet($article)) {
+										// Show a placeholder if no category breadcrumbs are known
+										if (empty($categories)) {
+									?>
+									<li><?php $this->_("Knowledgebase.!text.ellipsis");?></li>
+									<?php
+										}
+									?>
+									<li><?php $this->Html->_($article->title);?></li>
+									<?php
+									}
+									?>
+								</ol>
+							</div>

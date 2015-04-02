@@ -1,0 +1,85 @@
+			<?php
+			if (!empty($languages)) {
+			?>
+				<div class="tab_content inverse">
+					<ul class="tabs">
+						<?php
+						$i=0;
+						foreach ($languages as $lang) {
+						?>
+						<li<?php echo ($i++ == 0 ? " class=\"current\"" : "");?>>
+							<a href="#"><?php $this->Html->_($lang->name);?></a>
+						</li>
+						<?php
+						}
+						?>
+					</ul>
+					<div id="article_content" class="inner_content">
+						<?php
+						foreach ($languages as $i => $lang) {
+							$lang_code = $this->Html->ifSet($lang->code);
+						?>
+						<div>
+							<?php
+							$this->Form->fieldHidden("content[" . $i . "][lang]", $lang_code);
+							?>
+							<ul>
+								<li>
+									<?php
+									$this->Form->label($this->_("AdminKnowledgebase.article_content.title", true), "content[" . $i . "][title]");
+									$this->Form->fieldText("content[" . $i . "][title]", $this->Html->ifSet($vars[$lang_code]->title));
+									?>
+								</li>
+								<li>
+									<?php
+									$this->Form->label($this->_("AdminKnowledgebase.article_content.content_type", true));
+									
+									foreach ($this->Html->ifSet($content_types, array()) as $key => $content_type) {
+										$this->Form->fieldRadio("content[" . $i . "][content_type]", $key, $this->Html->ifSet($vars[$lang_code]->content_type, ($key == "text" ? $key : "")) == $key, array('id' => "type_" . $key . "-" . $i, 'class' => "content_type"));
+										$this->Form->label($content_type, "type_" . $key . "-" . $i, array('class' => "inline"));
+									}
+									?>
+								</li>
+								<?php
+								$type = $this->Html->ifSet($vars[$lang_code]->content_type, "text");
+								foreach ($this->Html->ifSet($content_types, array()) as $key => $content_type) {
+									$body_type = "body_" . $key;
+								?>
+								<li class="<?php $this->Html->_($key);?>"<?php echo $key == $type ? "" : " style=\"display:none;\"";?>>
+									<?php
+									$value = ($this->Html->ifSet($vars[$lang_code]->content_type) == $key) ? $this->Html->ifSet($vars[$lang_code]->body) : $this->Html->ifSet($vars[$lang_code]->{$body_type});
+									$this->Form->label($this->_("AdminKnowledgebase.article_content.body", true), "content[" . $i . "][" . $body_type . "]");
+									$this->Form->fieldTextarea("content[" . $i . "][" . $body_type . "]", $value, array('class' => $key));
+									?>
+								</li>
+								<?php
+								}
+								?>
+							</ul>
+						</div>
+						<?php
+						}
+						?>
+					</div>
+				</div>
+			<?php
+				$this->Javascript->setInline("
+				$(document).ready(function() {
+					$('div.tab_content').blestaTabbedContent();
+					
+					$('#article_content textarea.html').ckeditor(function() {}, {language: '" . substr(Configure::get("Blesta.language"), 0, 2) . "'});
+				
+					$('#article_content .content_type').on('change', function() {
+						if ($(this).val() == 'html') {
+							$(this).parents('ul').find('li.text').hide();
+							$(this).parents('ul').find('li.html').show();
+						}
+						else {
+							$(this).parents('ul').find('li.text').show();
+							$(this).parents('ul').find('li.html').hide();
+						}
+					});
+				});
+				");
+			}
+			?>

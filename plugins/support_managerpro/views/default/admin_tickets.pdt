@@ -20,7 +20,7 @@
 		$this->Widget->setWidgetButton("full_screen");
 		$this->Widget->create($this->_("AdminTickets.index.boxtitle_tickets", true), array('id'=>"admin_tickets"), $this->Html->ifSet($render_section, null));
 		$this->Form->create($this->base_uri . "plugin/support_managerpro/admin_tickets/action/", array('id' => "tickets"));
-		
+
 		if ($this->Html->ifSet($tickets, false) && ($num_tickets = count($tickets)) > 0) {
 		?>
 		<table class="table" id="tickets">

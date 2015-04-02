@@ -3,6 +3,8 @@
 $lang['SupportManagerproTickets.!error.code.format'] = "The ticket code must contain only digits.";
 $lang['SupportManagerproTickets.!error.department_id.exists'] = "Please select a valid department.";
 $lang['SupportManagerproTickets.!error.staff_id.exists'] = "The staff member selected for this ticket does not exist.";
+$lang['SupportManagerproTickets.!error.contact_id.exists'] = "The contact selected for this ticket reply does not exist.";
+$lang['SupportManagerproTickets.!error.contact_id.valid'] = "The contact may not reply to the ticket without a valid client.";
 $lang['SupportManagerproTickets.!error.service_id.exists'] = "The service selected for this ticket does not exist.";
 $lang['SupportManagerproTickets.!error.service_id.belongs'] = "The service selected is invalid.";
 $lang['SupportManagerproTickets.!error.client_id.exists'] = "The client selected for this ticket does not exist.";
@@ -47,8 +49,7 @@ $lang['SupportManagerproTickets.status.awaiting_reply'] = "Awaiting Reply";
 $lang['SupportManagerproTickets.status.in_progress'] = "In Progress";
 $lang['SupportManagerproTickets.status.closed'] = "Closed";
 $lang['SupportManagerproTickets.status.spam'] = "Spam";
-$lang['SupportManagerproTickets.status.deleted'] = "Delete";
-$lang['SupportManagerproTickets.status.pdelete'] = "Permanent Delete";
+$lang['SupportManagerproTickets.status.deleted'] = "Trash";
 
 
 // Reply types

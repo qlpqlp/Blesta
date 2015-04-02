@@ -1,0 +1,19 @@
+
+					
+							<div class="well well-kb">
+								<?php
+								$this->Form->create($this->base_uri . "plugin/support_managerpro/knowledgebase/search/");
+								?>
+									<div class="input-group input-group-md">
+										<?php
+										$this->Form->fieldText("search", $this->Html->ifSet($vars->search), array('class'=>"form-control input-md", 'placeholder'=>$this->_("Knowledgebase.search.placeholder", true)));
+										?>
+										<span class="input-group-btn">
+											<button class="btn btn-default btn-md" type="submit"><i class="fa fa-search"></i> <?php $this->_("Knowledgebase.search.form_submit");?></button>
+										</span>
+									</div>
+								<?php
+								$this->Form->end();
+								?>
+								<div class="clearfix"></div>
+							</div>

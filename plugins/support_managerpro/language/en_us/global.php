@@ -9,8 +9,9 @@ $lang['Global.time_since.minute'] = "%1\$s min"; // %1$s is the number of minute
 
 
 // Ticket Actions
+$lang['Global.action.quote'] = "Quote";
 $lang['Global.action.split'] = "Split";
 $lang['Global.action.merge'] = "Merge";
 $lang['Global.action.update_status'] = "Move to";
-$lang['Global.action.pdelete'] = "Permanent Delete";
+$lang['Global.action.pdelete'] = "Delete";
 ?>

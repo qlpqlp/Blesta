@@ -9,11 +9,14 @@ $lang['SupportManagerproPlugin.cron.close_ticketspro_name'] = "Close Tickets";
 $lang['SupportManagerproPlugin.cron.close_ticketspro_desc'] = "Automatically closes open tickets as configured for departments in the Support Managerpro.";
 
 // Plugin actions
-$lang['SupportManagerproPlugin.nav_primary_client.main'] = "Support Pro";
-$lang['SupportManagerproPlugin.nav_primary_staff.main'] = "Support Pro";
+$lang['SupportManagerproPlugin.nav_primary_client.main'] = "Support";
+$lang['SupportManagerproPlugin.nav_primary_client.tickets'] = "Tickets";
+$lang['SupportManagerproPlugin.nav_primary_client.knowledgebase'] = "Knowledge Base";
+$lang['SupportManagerproPlugin.nav_primary_staff.main'] = "Support";
 $lang['SupportManagerproPlugin.nav_primary_staff.tickets']  = "Tickets";
 $lang['SupportManagerproPlugin.nav_primary_staff.departments']  = "Departments";
 $lang['SupportManagerproPlugin.nav_primary_staff.responses']  = "Responses";
+$lang['SupportManagerproPlugin.nav_primary_staff.knowledgebase'] = "Knowledge Base";
 $lang['SupportManagerproPlugin.nav_primary_staff.staff'] = "Staff";
 $lang['SupportManagerproPlugin.widget_staff_client.tickets'] = "Tickets";
 $lang['SupportManagerproPlugin.action_staff_client.add'] = "Open Ticket";
@@ -28,4 +31,5 @@ $lang['SupportManagerproPlugin.permission.admin_tickets_client'] = "Client Profi
 $lang['SupportManagerproPlugin.permission.admin_departments'] = "Departments";
 $lang['SupportManagerproPlugin.permission.admin_responses'] = "Responses";
 $lang['SupportManagerproPlugin.permission.admin_staff'] = "Staff";
+$lang['SupportManagerproPlugin.permission.admin_knowledgebase'] = "Knowledge Base";
 ?>

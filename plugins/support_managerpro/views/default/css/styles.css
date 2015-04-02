@@ -205,3 +205,16 @@ ul.ui-autocomplete { font-size:12px;}
 
 #no_tickets { font-size:12px;}
 .common_box .content_section .inner ul li.ui-menu-item { margin:0;}
+
+/* Knowledge base */
+#articles { margin-top:0px;}
+#articles dd { float:left; margin:0; width:33%; padding-top:4px;}
+#articles dd div { height:16px; font-size:10px; font-weight:bold; line-height:16px; padding-right:8px;}
+#articles dd div a.manage { color:#C62425}
+#articles dd div.category.public { background:url(../../../../../vendors/fugue_icons/folder-horizontal-open.png) no-repeat 0 center; padding-left:24px;}
+#articles dd div.category { background:url(../../../../../vendors/fugue_icons/folder--exclamation.png) no-repeat 0 center; padding-left:24px;}
+#articles dd div.article.public { background:url(../../../../../vendors/fugue_icons/document-list.png) no-repeat 0 center; padding-left:24px;}
+#articles dd div.article { background:url(../../../../../vendors/fugue_icons/document--exclamation.png) no-repeat 0 center; padding-left:24px;}
+
+#up_directory { background:url(../../../../../vendors/fugue_icons/arrow-curve-090.png) no-repeat 0 center; padding:0; line-height:16px;}
+#up_directory a { padding-left:24px; font-size:12px; }

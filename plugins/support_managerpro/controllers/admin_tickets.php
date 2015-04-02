@@ -15,7 +15,7 @@ class AdminTickets extends SupportManagerproController {
 	 */
 	public function preAction() {
 		parent::preAction();
-		
+
 		$this->requireLogin();
 		
 		$this->uses(array("SupportManagerpro.SupportManagerproStaff", "SupportManagerpro.SupportManagerproTickets"));
@@ -49,6 +49,7 @@ class AdminTickets extends SupportManagerproController {
 	 */
 	private function getReplyActions() {
 		return array(
+			'quote' => Language::_("Global.action.quote", true),
 			'split' => Language::_("Global.action.split", true),
             'permanent_delete' => Language::_("Global.action.pdelete", true)
 		);
@@ -280,7 +281,12 @@ class AdminTickets extends SupportManagerproController {
 				$hash = $this->SupportManagerproTickets->generateReplyHash($ticket->id, $key);
 				$additional_tags = array('SupportManagerpro.ticket_updated' => array('update_ticket_url' => $this->Html->safe($hostname . $this->client_uri . "plugin/support_managerpro/client_tickets/reply/" . $ticket->id . "/?sid=" . rawurlencode($this->SupportManagerproTickets->systemEncrypt('h=' . substr($hash, -16) . "|k=" . $key)))));
 				$this->SupportManagerproTickets->sendEmail($reply_id, $additional_tags);
-				
+
+				// Notify staff that a ticket has been assigned to them
+				$assign_to_staff_id = (isset($data['ticket_staff_id']) ? $data['ticket_staff_id'] : $this->staff_id);
+				if (!empty($assign_to_staff_id) && $this->staff_id != $ticket->staff_id)
+					$this->SupportManagerproTickets->sendTicketAssignedEmail($ticket->id);
+
 				$this->flashMessage("message", Language::_("AdminTickets.!success.ticket_created", true, $ticket->code), null, false);
 				$this->redirect($this->base_uri . "plugin/support_managerpro/admin_tickets/");
 			}
@@ -308,7 +314,7 @@ class AdminTickets extends SupportManagerproController {
 	 * Reply to a ticket
 	 */
 	public function reply() {
-		
+
 		// Ensure a valid ticket is given
 		if (!isset($this->get[0]) || !($ticket = $this->SupportManagerproTickets->get($this->get[0], true, null, $this->staff_id)))
 			$this->redirect($this->base_uri . "plugin/support_managerpro/admin_tickets/");
@@ -349,7 +355,11 @@ class AdminTickets extends SupportManagerproController {
 				$hash = $this->SupportManagerproTickets->generateReplyHash($ticket->id, $key);
 				$additional_tags = array('SupportManagerpro.ticket_updated' => array('update_ticket_url' => $this->Html->safe($hostname . $this->client_uri . "plugin/support_managerpro/client_tickets/reply/" . $ticket->id . "/?sid=" . rawurlencode($this->SupportManagerproTickets->systemEncrypt('h=' . substr($hash, -16) . "|k=" . $key)))));
 				$this->SupportManagerproTickets->sendEmail($reply_id, $additional_tags);
-				
+
+				// Notify staff that a ticket has been assigned to them
+				if (!empty($this->post['ticket_staff_id']) && $this->post['ticket_staff_id'] != $ticket->staff_id && $this->staff_id != $this->post['ticket_staff_id'])
+					$this->SupportManagerproTickets->sendTicketAssignedEmail($ticket->id);
+
 				$this->flashMessage("message", Language::_("AdminTickets.!success.ticket_updated", true, $ticket->code), null, false);
 				$this->redirect($this->base_uri . "plugin/support_managerpro/admin_tickets/");
 			}
@@ -559,6 +569,31 @@ class AdminTickets extends SupportManagerproController {
 		}
 		
 		$this->redirect($this->base_uri . "plugin/support_managerpro/admin_tickets/");
+
+	}
+
+	/**
+	 * AJAX Fetches the given replies for the given ticket as markdown-quoted text
+	 */
+	public function getQuotedReplies() {
+		if (!$this->isAjax() || !isset($this->get[0]) || empty($this->post['reply_ids']) ||
+			!($ticket = $this->SupportManagerproTickets->get($this->get[0], true, array("reply"), $this->staff_id))) {
+			header($this->server_protocol . " 401 Unauthorized");
+			exit();
+		}
+
+		$reply_ids = explode(",", $this->post['reply_ids']);
+
+		$replies = "";
+		$i = 0;
+		foreach ($ticket->replies as $reply) {
+			if (in_array($reply->id, $reply_ids))
+				$replies .= ($i++ > 0 ? "\n" : "") . "\n" . preg_replace("/\r\n|\r|\n/", "\n>", ">" . $reply->details);
+		}
+
+		$this->outputAsJson($replies);
+		return false;
+
 	}
 	
 	/**
