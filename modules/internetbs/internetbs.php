@@ -12,7 +12,7 @@ class Internetbs extends Module {
 	/**
 	 * @var string The version of this module
 	 */
-	private static $version = "1.0.3";
+	private static $version = "1.0.4";
 	/**
 	 * @var string The authors of this module
 	 */
@@ -80,7 +80,7 @@ class Internetbs extends Module {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Returns a noun used to refer to a module row (e.g. "Server", "VPS", "Reseller Account", etc.)
 	 *
@@ -415,6 +415,43 @@ class Internetbs extends Module {
 	 * @see Module::getModuleRow()
 	 */
 	public function renewService($package, $service, $parent_package=null, $parent_service=null) {
+
+		$row = $this->getModuleRow($package->module_row);
+		$api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == "true");
+
+		// Renew domain
+		if ($package->meta->type == "domain") {
+			$fields = $this->serviceFieldsToObject($service->fields);
+
+			$vars = array(
+				'domain' => $fields->{'domain'},
+				'period' => 1
+			);
+
+			foreach ($package->pricing as $pricing) {
+				if ($pricing->id == $service->pricing_id) {
+					$vars['period'] = $pricing->term;
+					break;
+				}
+			}
+
+			    $vars['period'] = $vars['period']."Y";
+
+				$command = new InternetbsAll($api);
+				$response = $command->domain_renew($vars);
+				$this->processResponse($api, $response);
+
+				if ($this->Input->errors())
+					return;
+
+
+		}
+		else {
+			#
+			# TODO: SSL Cert: Set cancelation date of service?
+			#
+		}
+
 		return null;
 	}
 	

@@ -145,6 +145,76 @@ $lang['Internetbs.whois.AuxBillingPhone'] = "Phone";
 $lang['Internetbs.whois.AuxBillingOrganization'] = "Organization";
 $lang['Internetbs.whois.AuxBillingEmailAddress'] = "Email";
 
+// .IT domain fields
+$lang['Internetbs.domain.dotitEntityType'] = "Legal Entity Type";
+$lang['Internetbs.domain.dotitEntityType.1'] = "Italian and foreign natural persons";
+$lang['Internetbs.domain.dotitEntityType.2'] = "Companies/one man companies";
+$lang['Internetbs.domain.dotitEntityType.3'] = "Freelance workers/professionals";
+$lang['Internetbs.domain.dotitEntityType.4'] = "Non-profit organizations";
+$lang['Internetbs.domain.dotitEntityType.5'] = "Public organizations";
+$lang['Internetbs.domain.dotitEntityType.6'] = "Other subjects";
+$lang['Internetbs.domain.dotitEntityType.7'] = "Foreigners who match 2-6";
+
+$lang['Internetbs.domain.dotitNationality'] = "Nationality";
+$lang['Internetbs.domain.dotitRegCode'] = "VAT/TAX/Passport/ID Number";
+$lang['Internetbs.domain.dotitHideWhois'] = "Hide data in public WHOIS";
+$lang['Internetbs.domain.dotitHideWhois.no'] = "No";
+$lang['Internetbs.domain.dotitHideWhois.yes'] = "Yes";
+
+$lang['Internetbs.domain.dotitterms'] = "Accept Nic.it registry:
+Declarations and assumptions of liability - The Registrant of the domain name in question, declares under their own responsibility that they are:
+            a) in possession of the citizenship or resident in a country belonging to the European Union (in the case of registration for natural persons);
+			b) established in a country belonging to the European Union (in the case of registration for other organizations);
+			c) aware and accept that the registration and management of a domain name is subject to the Rules of assignment and management of domain names in ccTLD. it and Regulations for the resolution of disputes in the ccTLD.it and their subsequent amendments;
+			d) entitled to the use and/or legal availability of the domain name applied for, and that they do not prejudice, with the request for registration, the rights of others;
+			e) aware that for the inclusion of personal data in the Database of assigned domain names, and their possible dissemination and accessibility via the Internet, consent must be given explicitly by ticking the appropriate boxes in the information below. See The policy of the .it Registry in the Whois Database on the website of the Registry (http://www.nic.it);
+			f) aware and agree that in the case of erroneous or false declarations in this request, the Registry shall immediately revoke the domain name, or proceed with other legal actions. In such case the revocation shall not in any way give rise to claims against the Registry;
+			g) release the Registry from any liability resulting from the assignment and use of the domain name by the natural person that has made the request;
+			h) accept Italian jurisdiction and laws of the Italian State.
+
+Information and acquisition of consent for the processing of data for the registration of the domain name and for visibility on the Internet
+Disclosure regarding the protection of personal data (D. Lgs. 30 June 2003, No. 196, Art. 13) To carry out activities to which the present disclosure relates:
+
+			a) the holder of the treatment of data is the Italian National Research Council, through the Institute of Informatics and Telematics of the CNR,.it Registry (http://www.nic.it);
+			b) the Registrar is responsible for processing the data and manages contractual relations with the Registrant, the identification data are contained in the contract between the said Registrar and the Registrant, and therefore known by the party concerned. A list of those responsible for processing data is available on the website of the Registry (http://www.nic.it). The Registrar is the holder of the treatment of data with regard to contractual relations directly with the Registrant, not included in this disclosure;
+			c) the mandatory information is that information that is essential in order for the service requested to be provided.
+
+
+		The Registrant's personal data are collected by the Registrar who manages contractual relations with the Registrant using this form, in order to register and manage the domain name in the Data Base of Assigned Names at the Institute of Information and Telematics of the CNR, .it Registry.
+		done electronically, the IP address from which the connection originates on the Internet relating to filling in the online form by the Registrant will also be detected and stored along with the log of the relative transaction. This is done in order to identify the Registrant in connection with the personal information and statements given by the Registrant. Personal data, the above-mentioned IP address and the log of the transaction are mandatory information.
+		The mandatory information collected will be treated for purposes of administrative and accounting management, protection of rights and other objectives and activities related to registration, management, dispute, transfer and cancellation of the domain name, and for compliance with requirements of the law, regulations or EU legislation and disclosed to third parties for ancillary or necessary activities to ensure the accomplishment of those objectives. The data will not be used nor disclosed to third parties for any marketing purposes. With the exception of the IP address, the data will also be communicated to third parties who purport to want to act to protect individual rights in relation to the Registrant in connection with the registration or use of the domain name. In accordance with the standards of the Internet Engineering Task Force - IETF (http://www.ietf.org) to ensure the accessibility of the domain name on the Internet, in order to maintain the balance for the system, and in consideration of the policy of the Registry of the ccTLD .it in order to avoid situations of anonymity and to allow the tracing of assignees, in the case of registration the following information will in any case will be visible on the Internet, through a Whois query: domain name, name and surname of the Registrant or the corporate name, status of the domain, Registrar and technical data (contactID, date of registration, expiry date, date  of last update and nameserver).
+		For the purposes of this disclosure, the consent to treatment for the purposes of registration refers to all these activities taken as a whole. Giving consent for the purposes of registration is optional, but if no consent is given, it will not be possible to finalize the registration, assignment and management of the domain name.
+		Upon a separate agreement, via a Whois query the following will also be visible via the Internet: domain name, address of residence or head office of the Registrant along with their telephone number, fax number and e-mail address.
+		For the purposes of this disclosure, the consent for access and dissemination via the Internet is only for the latter activities and types of data.
+
+		Giving consent for accessibility and dissemination via the Internet is optional. Not giving consent does not preclude the registration but only public visibility via Whois queries of these data, within the limits defined above.
+		More information on how to query the Registry Database is available on the website of the Registry: www.nic.it.
+		The interested party can exercise their rights under Art. 7 of the Code for the protection of personal data which include the right of access, rectification and deletion of data.
+		These rights may be exercised by request to the Registrar who manages the contractual relationship with the Registrant and subordinate to the Institute of Informatics and Telematics of CNR, Via Giuseppe Moruzzi, 1, I-56124 Pisa, Italy.
+
+
+Consent to the processing of personal data for registration
+The interested party, after reading the above disclosure, gives consent to the processing of information required for registration, as defined in the above disclosure.
+
+Giving consent is optional, but if no consent is given, it will not be possible to finalize the registration, assignment and management of the domain name.
+
+
+Consent to the processing of personal data for diffusion and accessibility via the Internet
+The interested party, after reading the above disclosure, gives consent to the dissemination and accessibility via the Internet, as defined in the disclosure above.
+Giving consent is optional, but absence of consent does not allow the dissemination and accessibility of Internet data.
+
+
+Explicit Acceptance of the following points
+For explicit acceptance, the interested party declares that they:
+
+			c) are aware and agree that the registration and management of a domain name is subject to the Rules of assignment and management of domain names in ccTLD.it and Regulations for the resolution of disputes in the ccTLD.it and their subsequent amendments;
+			f) are aware and agree that in the case of erroneous or false declarations in this request, the Registry shall immediately revoke the domain name, or proceed with other legal actions. In such case the revocation shall not in any way give rise to claims against the Registry;
+			g) release the Registry from any liability resulting from the assignment and use of the domain name by the natural person that has made the request;
+			h) accept the Italian jurisdiction and laws of the Italian State.
+";
+$lang['Internetbs.domain.dotitterms.yes'] = "Yes, I Accept";
+
+
 // .US domain fields
 $lang['Internetbs.domain.RegistrantNexus'] = "Registrant Type";
 $lang['Internetbs.domain.RegistrantNexus.c11'] = "US citizen";
